@@ -28,33 +28,30 @@ func (self *internalError) Error() string {
 
 // internalCodeStack starting with first (cause) internal code to most recent.
 func (self *internalError) internalCodeStack() string {
-	stack := self.internalCode
+	var stack string
 
-	var err error = self
-	for {
-		if err = Unwrap(err); err == nil {
-			break
-		} else {
-			if asInternalError, ok := err.(*internalError); ok {
+	recurseErrorStack(self, func(err error) {
+		if asInternalError, ok := err.(*internalError); ok {
+			if stack == "" {
+				stack = asInternalError.internalCode
+			} else {
 				stack = asInternalError.internalCode + "," + stack
 			}
 		}
-	}
+	})
 
 	return stack
 }
 
 // first internal error
 func (self *internalError) first() *internalError {
-	var firstError *internalError = self
+	var firstError *internalError
 
-	var err error = firstError
-	for err != nil {
+	recurseErrorStack(self, func(err error) {
 		if asInternalError, ok := err.(*internalError); ok {
 			firstError = asInternalError
 		}
-		err = Unwrap(err)
-	}
+	})
 
 	return firstError
 }

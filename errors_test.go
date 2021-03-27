@@ -233,7 +233,7 @@ func Test_Cause(t *testing.T) {
 			about:                "it shows golang error as cause",
 			errorFunc:            fooB2,
 			expectedCause:        errFooA2,
-			expectedInternalCode: "",
+			expectedInternalCode: "fooB",
 		},
 	}
 	for _, testCase := range testCases {
@@ -242,6 +242,34 @@ func Test_Cause(t *testing.T) {
 			actual := Cause(err)
 			if actual != testCase.expectedCause {
 				t.Errorf("expected %s, but got %s", testCase.expectedCause, actual)
+			}
+		})
+	}
+}
+
+func Test_InternalCode(t *testing.T) {
+	testCases := []struct {
+		about                string
+		errorFunc            func() error
+		expectedInternalCode string
+	}{
+		{
+			about:                "it shows internal code where cause is internalError",
+			errorFunc:            fooB,
+			expectedInternalCode: "fooA",
+		},
+		{
+			about:                "it shows internal code where cause is golang error",
+			errorFunc:            fooB2,
+			expectedInternalCode: "fooB",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.about, func(t *testing.T) {
+			err := testCase.errorFunc()
+			actual := InternalCode(err)
+			if actual != testCase.expectedInternalCode {
+				t.Errorf("expected %s, but got %s", testCase.expectedInternalCode, actual)
 			}
 		})
 	}
@@ -305,6 +333,41 @@ func Test_Is(t *testing.T) {
 			err := testCase.errorFunc()
 			if !Is(err, testCase.expectedError) {
 				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, err)
+			}
+		})
+	}
+}
+
+func Test_As(t *testing.T) {
+
+	testCases := []struct {
+		about         string
+		errorFunc     func() error
+		asErr         error
+		expectedError error
+	}{
+		{
+			about:         "it is an internalError",
+			errorFunc:     fooB,
+			asErr:         &internalError{},
+			expectedError: errFooA,
+		},
+		{
+			about:         "it is a golang error",
+			errorFunc:     fooB2,
+			asErr:         fmt.Errorf(""),
+			expectedError: errFooA2,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.about, func(t *testing.T) {
+			err := testCase.errorFunc()
+
+			if !As(err, &testCase.asErr) {
+				t.Errorf("not the error expected")
+			}
+			if !Is(testCase.asErr, testCase.expectedError) {
+				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, testCase.asErr)
 			}
 		})
 	}

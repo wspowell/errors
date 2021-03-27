@@ -41,18 +41,41 @@ func Unwrap(err error) error {
 	return pkgerrors.Unwrap(err)
 }
 
+// InternalCode of the first error created or wrapped.
+// If err does not have an internal code then return empty string.
+func InternalCode(err error) string {
+	var internalCode string
+
+	recurseErrorStack(err, func(err error) {
+		if asInternalError, ok := err.(*internalError); ok {
+			internalCode = asInternalError.internalCode
+		}
+	})
+
+	return internalCode
+}
+
 // Cause of the error.
 // This returns the very first error encoutered whether that was
 // a new application error or an external error.
 func Cause(err error) error {
-	var next error
+	var cause error
 
+	recurseErrorStack(err, func(err error) {
+		cause = err
+	})
+
+	return cause
+}
+
+func recurseErrorStack(err error, processFn func(error)) {
+	var next error
 	for err != nil {
+		processFn(err)
+
 		if next = Unwrap(err); next == nil {
 			break
 		}
 		err = next
 	}
-
-	return err
 }
