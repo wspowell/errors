@@ -2,7 +2,6 @@ package errors
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -33,50 +32,45 @@ func Test_New(t *testing.T) {
 	testCases := []struct {
 		about        string
 		internalCode string
-		err          string
+		format       string
+		values       []interface{}
 	}{
 		{
-			about:        "it creates a new internal error with the given error",
+			about:        "it creates a new internal error with format",
 			internalCode: "ER1001",
-			err:          "whoops",
+			format:       "whoops",
 		},
 		{
-			about:        "it creates a new internal error when internal code is empty",
+			about:        "it creates a new internal error with format and values",
+			internalCode: "ER1001",
+			format:       "whoops: %s",
+			values:       []interface{}{"bad"},
+		},
+		{
+			about:        "it creates a new internal error with empty internal code",
 			internalCode: "",
-			err:          "whoops",
-		},
-		{
-			about:        "it creates a new internal error when err is nil",
-			internalCode: "ER1001",
-			err:          "",
+			format:       "whoops",
+			values:       []interface{}{"bad"},
 		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.about, func(t *testing.T) {
-			err := New(testCase.internalCode, testCase.err)
+			err := New(testCase.internalCode, testCase.format, testCase.values...)
 
 			if err == nil {
 				t.Errorf("created internal error is nil")
 				return
 			}
 
-			var expectedFeatureCode string
+			expectedErrorString := fmt.Sprintf(testCase.format, testCase.values...)
 
-			if testCase.internalCode == "" {
-				expectedFeatureCode = ""
-			} else {
-				expectedFeatureCode = testCase.internalCode
-			}
-
-			expectedErrorString := testCase.err
-
-			if err.(*internalError).internalCode != expectedFeatureCode {
-				t.Errorf("expected internal code '%v', got '%v'", testCase.err, err)
+			if err.(*cause).internalCode != testCase.internalCode {
+				t.Errorf("expected internal code '%v', got '%v'", expectedErrorString, err)
 				return
 			}
 
 			if err.Error() != expectedErrorString {
-				t.Errorf("expected error '%v', got '%v'", testCase.err, err)
+				t.Errorf("expected error '%v', got '%v'", expectedErrorString, err)
 				return
 			}
 		})
@@ -85,19 +79,39 @@ func Test_New(t *testing.T) {
 
 func Test_Wrap(t *testing.T) {
 	testCases := []struct {
-		about        string
-		internalCode string
-		err          error
+		about                string
+		internalCode         string
+		err                  error
+		expectedInternalCode string
+		expectedErrorString  string
 	}{
 		{
-			about:        "it creates a new internal error with the given error",
-			internalCode: "ER1001",
-			err:          fmt.Errorf("whoops"),
+			about:                "it creates a new wrapped error with the given cause",
+			internalCode:         "ER1001",
+			err:                  New("ER1000", "whoops"),
+			expectedInternalCode: "ER1000",
+			expectedErrorString:  "whoops",
 		},
 		{
-			about:        "it creates a new internal error when internal code is empty",
-			internalCode: "",
-			err:          fmt.Errorf("whoops"),
+			about:                "it creates a new wrapped error with the given error",
+			internalCode:         "ER1001",
+			err:                  fmt.Errorf("whoops"),
+			expectedInternalCode: "ER1001",
+			expectedErrorString:  "whoops",
+		},
+		{
+			about:                "it creates a new wrapped error when internal code is empty",
+			internalCode:         "",
+			err:                  fmt.Errorf("whoops"),
+			expectedInternalCode: "",
+			expectedErrorString:  "whoops",
+		},
+		{
+			about:                "it creates a new wrapped error when error is nil",
+			internalCode:         "ER1001",
+			err:                  nil,
+			expectedInternalCode: "ER1001",
+			expectedErrorString:  "%!s(<nil>)",
 		},
 	}
 	for _, testCase := range testCases {
@@ -109,107 +123,14 @@ func Test_Wrap(t *testing.T) {
 				return
 			}
 
-			var expectedFeatureCode string
-			var expectedErrorString string
-
-			if testCase.internalCode == "" {
-				expectedFeatureCode = ""
-			} else {
-				expectedFeatureCode = testCase.internalCode
-			}
-
-			if testCase.err == nil {
-				expectedErrorString = "ERROR"
-			} else {
-				expectedErrorString = testCase.err.Error()
-			}
-
-			if err.(*internalError).internalCode != expectedFeatureCode {
-				t.Errorf("expected internal code '%v', got '%v'", testCase.err.Error(), err.Error())
+			if InternalCode(err) != testCase.expectedInternalCode {
+				t.Errorf("expected internal code '%v', got '%v'", testCase.expectedInternalCode, InternalCode(err))
 				return
 			}
 
-			if err.Error() != expectedErrorString {
-				t.Errorf("expected error '%v', got '%v'", expectedErrorString, err.Error())
+			if err.Error() != testCase.expectedErrorString {
+				t.Errorf("expected error '%v', got '%v'", testCase.expectedErrorString, err.Error())
 				return
-			}
-		})
-	}
-}
-
-func Test_internalError_Format(t *testing.T) {
-
-	testCases := []struct {
-		about               string
-		errorFunc           func() error
-		formatString        string
-		expectedErrorString string
-	}{
-		// All errors are internalError.
-		{
-			about:               "all errors internalErrr - it prints error as string",
-			errorFunc:           fooB,
-			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
-		},
-		{
-			about:               "all errors internalErrr - it prints error as value",
-			errorFunc:           fooB,
-			formatString:        "%v",
-			expectedErrorString: "[fooA] whoops: this is bad",
-		},
-		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack",
-			errorFunc:           fooB,
-			formatString:        "%#v",
-			expectedErrorString: "[fooA,fooB] whoops: this is bad",
-		},
-		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack and with stack trace",
-			errorFunc:           fooB,
-			formatString:        "%+v",
-			expectedErrorString: "[fooA,fooB] whoops: this is bad\ngithub.com/wspowell/errors.New",
-		},
-		// Root error is golang error.
-		{
-			about:               "cause error is golang error - it prints error as string",
-			errorFunc:           fooB2,
-			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
-		},
-		{
-			about:               "cause error is golang error - it prints error as value",
-			errorFunc:           fooB2,
-			formatString:        "%v",
-			expectedErrorString: "[fooB] whoops: this is bad",
-		},
-		{
-			about:               "cause error is golang error - it prints error as value with internal code stack",
-			errorFunc:           fooB2,
-			formatString:        "%#v",
-			expectedErrorString: "[fooB] whoops: this is bad",
-		},
-		{
-			about:               "cause error is golang error - it prints error as value with internal code stack and with stack trace",
-			errorFunc:           fooB2,
-			formatString:        "%+v",
-			expectedErrorString: "[fooB] whoops: this is bad\ngithub.com/wspowell/errors.Wrap",
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.about, func(t *testing.T) {
-			err := testCase.errorFunc()
-
-			actual := fmt.Sprintf(testCase.formatString, err)
-
-			if testCase.formatString == "%+v" {
-				if !strings.HasPrefix(actual, testCase.expectedErrorString) {
-					t.Errorf("expected %s, but got %s", testCase.expectedErrorString, actual)
-				}
-			} else {
-				if actual != testCase.expectedErrorString {
-					t.Errorf("expected %s, but got %s", testCase.expectedErrorString, actual)
-				}
 			}
 		})
 	}
@@ -218,22 +139,19 @@ func Test_internalError_Format(t *testing.T) {
 func Test_Cause(t *testing.T) {
 
 	testCases := []struct {
-		about                string
-		errorFunc            func() error
-		expectedCause        error
-		expectedInternalCode string
+		about         string
+		errorFunc     func() error
+		expectedCause error
 	}{
 		{
-			about:                "it shows internalError as cause",
-			errorFunc:            fooB,
-			expectedCause:        errFooA,
-			expectedInternalCode: "fooA",
+			about:         "it shows internalError as cause",
+			errorFunc:     fooB,
+			expectedCause: errFooA,
 		},
 		{
-			about:                "it shows golang error as cause",
-			errorFunc:            fooB2,
-			expectedCause:        errFooA2,
-			expectedInternalCode: "fooB",
+			about:         "it shows golang error as cause",
+			errorFunc:     fooB2,
+			expectedCause: errFooA2,
 		},
 	}
 	for _, testCase := range testCases {
@@ -241,7 +159,7 @@ func Test_Cause(t *testing.T) {
 			err := testCase.errorFunc()
 			actual := Cause(err)
 			if actual != testCase.expectedCause {
-				t.Errorf("expected %s, but got %s", testCase.expectedCause, actual)
+				t.Errorf("expected %s (%p), but got %s (%p)", testCase.expectedCause, testCase.expectedCause, actual, actual)
 			}
 		})
 	}
@@ -302,7 +220,7 @@ func Test_Unwrap(t *testing.T) {
 			}
 
 			if testCase.expectedError == errFooA {
-				if err.(*internalError).Unwrap() != Unwrap(err) {
+				if err.(*wrapped).Unwrap() != Unwrap(err) {
 					t.Errorf("unwraps are not equal")
 				}
 			}
@@ -349,7 +267,7 @@ func Test_As(t *testing.T) {
 		{
 			about:         "it is an internalError",
 			errorFunc:     fooB,
-			asErr:         &internalError{},
+			asErr:         &wrapped{},
 			expectedError: errFooA,
 		},
 		{

@@ -1,28 +1,30 @@
 package errors
 
 import (
-	"fmt"
-
-	pkgerrors "github.com/pkg/errors"
+	goerrors "errors"
 )
 
 // New error.
 // This should be called when the application creates a brand new error.
 // If an error has been received from an external function or is propogating an error, use Wrap().
 func New(internalCode string, format string, values ...interface{}) error {
-	return newInternalError(internalCode, pkgerrors.New(fmt.Sprintf(format, values...)))
+	return newCause(internalCode, format, values...)
 }
 
 // Wrap an existing error.
 // The internalCode should be a unique code to allow developers to easily identify the source of an issue.
 func Wrap(internalCode string, err error) error {
-	return newInternalError(internalCode, pkgerrors.WithStack(err))
+	causeErr := &cause{}
+	if As(err, &causeErr) {
+		return newWrapped(internalCode, err)
+	}
+	return newCauseWithError(internalCode, err)
 }
 
 // Is reports whether any error in err's chain matches target.
 // See: https://golang.org/pkg/errors/#Is
 func Is(err, target error) bool {
-	return pkgerrors.Is(err, target)
+	return goerrors.Is(err, target)
 }
 
 // As finds the first error in err's chain that matches target,
@@ -30,7 +32,7 @@ func Is(err, target error) bool {
 // Otherwise, it returns false.
 // See: https://golang.org/pkg/errors/#As
 func As(err error, target interface{}) bool {
-	return pkgerrors.As(err, target)
+	return goerrors.As(err, target)
 }
 
 // Unwrap returns the result of calling the Unwrap method on err,
@@ -38,7 +40,7 @@ func As(err error, target interface{}) bool {
 // Otherwise, Unwrap returns nil.
 // See: https://golang.org/pkg/errors/#Unwrap
 func Unwrap(err error) error {
-	return pkgerrors.Unwrap(err)
+	return goerrors.Unwrap(err)
 }
 
 // InternalCode of the first error created or wrapped.
@@ -47,8 +49,8 @@ func InternalCode(err error) string {
 	var internalCode string
 
 	recurseErrorStack(err, func(err error) {
-		if asInternalError, ok := err.(*internalError); ok {
-			internalCode = asInternalError.internalCode
+		if asCause, ok := err.(*cause); ok {
+			internalCode = asCause.internalCode
 		}
 	})
 
@@ -59,13 +61,24 @@ func InternalCode(err error) string {
 // This returns the very first error encoutered whether that was
 // a new application error or an external error.
 func Cause(err error) error {
-	var cause error
+	var firstErr error
+	var causeErr *cause
 
 	recurseErrorStack(err, func(err error) {
-		cause = err
+		if asCause, ok := err.(*cause); ok {
+			causeErr = asCause
+		}
+		firstErr = err
 	})
 
-	return cause
+	if causeErr != nil {
+		if causeErr.err != nil {
+			return causeErr.err
+		}
+		return causeErr
+	}
+
+	return firstErr
 }
 
 func recurseErrorStack(err error, processFn func(error)) {
