@@ -78,6 +78,8 @@ func Test_New(t *testing.T) {
 }
 
 func Test_Wrap(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		about                string
 		internalCode         string
@@ -137,6 +139,7 @@ func Test_Wrap(t *testing.T) {
 }
 
 func Test_Cause(t *testing.T) {
+	t.Parallel()
 
 	testCases := []struct {
 		about         string
@@ -166,6 +169,8 @@ func Test_Cause(t *testing.T) {
 }
 
 func Test_InternalCode(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		about                string
 		errorFunc            func() error
@@ -194,6 +199,7 @@ func Test_InternalCode(t *testing.T) {
 }
 
 func Test_Unwrap(t *testing.T) {
+	t.Parallel()
 
 	testCases := []struct {
 		about         string
@@ -229,6 +235,7 @@ func Test_Unwrap(t *testing.T) {
 }
 
 func Test_Is(t *testing.T) {
+	t.Parallel()
 
 	testCases := []struct {
 		about         string
@@ -257,6 +264,7 @@ func Test_Is(t *testing.T) {
 }
 
 func Test_As(t *testing.T) {
+	t.Parallel()
 
 	testCases := []struct {
 		about         string

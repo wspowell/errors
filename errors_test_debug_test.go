@@ -1,3 +1,4 @@
+//go:build !release
 // +build !release
 
 package errors
@@ -17,6 +18,8 @@ func fooD() error {
 }
 
 func Test_error_Format(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		about               string
 		errorFunc           func() error

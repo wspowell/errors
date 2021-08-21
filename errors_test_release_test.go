@@ -1,3 +1,4 @@
+//go:build release
 // +build release
 
 package errors
@@ -8,6 +9,7 @@ import (
 )
 
 func Test_internalError_Format(t *testing.T) {
+	t.Parallel()
 
 	testCases := []struct {
 		about               string
