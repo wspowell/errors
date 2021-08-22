@@ -53,8 +53,11 @@ func Test_New(t *testing.T) {
 			values:       []interface{}{"bad"},
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := New(testCase.internalCode, testCase.format, testCase.values...)
 
 			if err == nil {
@@ -116,8 +119,11 @@ func Test_Wrap(t *testing.T) {
 			expectedErrorString:  "%!s(<nil>)",
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := Wrap(testCase.internalCode, testCase.err)
 
 			if err == nil {
@@ -156,9 +162,17 @@ func Test_Cause(t *testing.T) {
 			errorFunc:     fooB2,
 			expectedCause: errFooA2,
 		},
+		{
+			about:         "it shows golang error as cause when no cause error",
+			errorFunc:     fooA2,
+			expectedCause: errFooA2,
+		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 			actual := Cause(err)
 			if actual != testCase.expectedCause {
@@ -187,8 +201,11 @@ func Test_InternalCode(t *testing.T) {
 			expectedInternalCode: "fooB",
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 			actual := InternalCode(err)
 			if actual != testCase.expectedInternalCode {
@@ -217,8 +234,11 @@ func Test_Unwrap(t *testing.T) {
 			expectedError: errFooA2,
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 			actual := Unwrap(err)
 			if actual != testCase.expectedError {
@@ -253,8 +273,11 @@ func Test_Is(t *testing.T) {
 			expectedError: errFooA2,
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 			if !Is(err, testCase.expectedError) {
 				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, err)
@@ -285,8 +308,11 @@ func Test_As(t *testing.T) {
 			expectedError: errFooA2,
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 
 			if !As(err, &testCase.asErr) {

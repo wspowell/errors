@@ -68,8 +68,11 @@ func Test_internalError_Format(t *testing.T) {
 			expectedErrorString: "[fooB] whoops: this is bad",
 		},
 	}
-	for _, testCase := range testCases {
+	for index := range testCases {
+		testCase := testCases[index]
 		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
 			err := testCase.errorFunc()
 
 			actual := fmt.Sprintf(testCase.formatString, err)
