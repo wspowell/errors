@@ -15,7 +15,7 @@ func fooA() error {
 }
 
 func fooB() error {
-	return Wrap("fooB", fooA())
+	return Propagate("fooB", fooA())
 }
 
 func fooA2() error {
@@ -23,7 +23,7 @@ func fooA2() error {
 }
 
 func fooB2() error {
-	return Wrap("fooB", fooA2())
+	return Propagate("fooB", fooA2())
 }
 
 func Test_New(t *testing.T) {
@@ -80,7 +80,7 @@ func Test_New(t *testing.T) {
 	}
 }
 
-func Test_Wrap(t *testing.T) {
+func Test_Propagate(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -124,7 +124,7 @@ func Test_Wrap(t *testing.T) {
 		t.Run(testCase.about, func(t *testing.T) {
 			t.Parallel()
 
-			err := Wrap(testCase.internalCode, testCase.err)
+			err := Propagate(testCase.internalCode, testCase.err)
 
 			if err == nil {
 				t.Errorf("created internal error is nil")
@@ -246,7 +246,7 @@ func Test_Unwrap(t *testing.T) {
 			}
 
 			if testCase.expectedError == errFooA {
-				if err.(*wrapped).Unwrap() != Unwrap(err) {
+				if err.(*propagated).Unwrap() != Unwrap(err) {
 					t.Errorf("unwraps are not equal")
 				}
 			}
@@ -298,7 +298,7 @@ func Test_As(t *testing.T) {
 		{
 			about:         "it is an internalError",
 			errorFunc:     fooB,
-			asErr:         &wrapped{},
+			asErr:         &propagated{},
 			expectedError: errFooA,
 		},
 		{

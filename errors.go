@@ -11,12 +11,12 @@ func New(internalCode string, format string, values ...interface{}) error {
 	return newCause(internalCode, format, values...)
 }
 
-// Wrap an existing error.
+// Propagate an existing error.
 // The internalCode should be a unique code to allow developers to easily identify the source of an issue.
-func Wrap(internalCode string, err error) error {
+func Propagate(internalCode string, err error) error {
 	causeErr := &cause{}
 	if As(err, &causeErr) {
-		return newWrapped(internalCode, err)
+		return newPropagated(internalCode, err)
 	}
 	return newCauseWithError(internalCode, err)
 }

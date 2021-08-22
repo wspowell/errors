@@ -1,14 +1,16 @@
-package errors
+package errors_test
 
 import (
 	goerrors "errors"
 	"fmt"
 	"testing"
+
+	"github.com/wspowell/errors"
 )
 
 func Benchmark_errors_New(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		New("code", "test")
+		errors.New("code", "test")
 	}
 }
 
@@ -18,17 +20,17 @@ func Benchmark_goerrors_New(b *testing.B) {
 	}
 }
 
-func Benchmark_errors_Wrap_cause(b *testing.B) {
-	err := New("code", "test")
+func Benchmark_errors_Propagate_cause(b *testing.B) {
+	err := errors.New("code", "test")
 	for i := 0; i < b.N; i++ {
-		Wrap("wrap", err)
+		errors.Propagate("propagate", err)
 	}
 }
 
-func Benchmark_errors_Wrap_goerror(b *testing.B) {
+func Benchmark_errors_Propagate_goerror(b *testing.B) {
 	err := goerrors.New("test")
 	for i := 0; i < b.N; i++ {
-		Wrap("wrap", err)
+		errors.Propagate("propagate", err)
 	}
 }
 

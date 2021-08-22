@@ -5,26 +5,26 @@ package errors
 
 import "fmt"
 
-// wrapped implements error and provides internal code tracking and stack traces.
-type wrapped struct {
+// propagated implements error and provides internal code tracking and stack traces (debug only).
+type propagated struct {
 	internalCode string
 	err          error
 }
 
-// newInternalError creates a new internal error.
+// newPropagated creates a new propagated error.
 // This wraps the given error.
-func newWrapped(internalCode string, err error) *wrapped {
-	return &wrapped{
+func newPropagated(internalCode string, err error) *propagated {
+	return &propagated{
 		internalCode: internalCode,
 		err:          err,
 	}
 }
 
-// Format the internal error for different situations.
+// Format the propagated error for different situations.
 //   * %+v - Print error with internal code stack and stack trace
 //   * %#v - Print error with internal code stack
 //   * %v  - Print error with first internal code
-func (self *wrapped) Format(state fmt.State, verb rune) {
+func (self *propagated) Format(state fmt.State, verb rune) {
 	// Determine what to prepend to the error string, if anything.
 	switch verb {
 	case 'v':
@@ -37,6 +37,6 @@ func (self *wrapped) Format(state fmt.State, verb rune) {
 		}
 	}
 
-	// Call Format for wrapped errors.
+	// Call Format for propagated errors.
 	self.err.(fmt.Formatter).Format(state, verb)
 }

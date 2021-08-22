@@ -14,7 +14,7 @@ func fooC() error {
 }
 
 func fooD() error {
-	return Wrap("fooD", fooC())
+	return Propagate("fooD", fooC())
 }
 
 func Test_error_Format(t *testing.T) {
