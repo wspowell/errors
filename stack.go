@@ -1,5 +1,3 @@
-// +build !release
-
 // Copied (and modified) from: github.com/pkg/errors@v0.9.1/stack.go
 package errors
 
@@ -9,7 +7,6 @@ import (
 	"path"
 	"runtime"
 	"strconv"
-	"strings"
 )
 
 // Frame represents a program counter inside a stack frame.
@@ -56,7 +53,6 @@ func (f Frame) name() string {
 //
 //    %s    source file
 //    %d    source line
-//    %n    function name
 //    %v    equivalent to %s:%d
 //
 // Format accepts flags that alter the printing of some verbs, as follows:
@@ -77,8 +73,6 @@ func (f Frame) Format(s fmt.State, verb rune) {
 		}
 	case 'd':
 		io.WriteString(s, strconv.Itoa(f.line()))
-	case 'n':
-		io.WriteString(s, funcname(f.name()))
 	case 'v':
 		f.Format(s, 's')
 		io.WriteString(s, ":")
@@ -108,12 +102,4 @@ func callers() *stack {
 	n := runtime.Callers(4, pcs[:])
 	var st stack = pcs[0:n]
 	return &st
-}
-
-// funcname removes the path prefix component of a function's name reported by func.Name().
-func funcname(name string) string {
-	i := strings.LastIndex(name, "/")
-	name = name[i+1:]
-	i = strings.Index(name, ".")
-	return name[i+1:]
 }
