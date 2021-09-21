@@ -6,7 +6,7 @@ import (
 
 // New error.
 // This should be called when the application creates a brand new error.
-// If an error has been received from an external function or is propogating an error, use Wrap().
+// If an error has been received from an external function or is propogating an error, use Propagate().
 func New(internalCode string, format string, values ...interface{}) error {
 	return newCause(internalCode, format, values...)
 }
@@ -19,6 +19,21 @@ func Propagate(internalCode string, err error) error {
 		return newPropagated(internalCode, err)
 	}
 	return newCauseWithError(internalCode, err)
+}
+
+// Convert an existing error to a new error.
+// Calls to As(), Is(), InternalCode(), Cause(), and Unwrap() will only refer to the new error.
+// Original error used for formatting/printing only.
+// This may be useful when a concrete error should be returned from a function to enable consumers
+//   to detect this error with As() or Is().
+func Convert(internalCode string, fromErr error, toErr error) error {
+	if toErr == nil {
+		return Propagate(internalCode, fromErr)
+	}
+	if fromErr == nil {
+		return Propagate(internalCode, toErr)
+	}
+	return newCauseWithErrorConversion(internalCode, fromErr, toErr)
 }
 
 // Is reports whether any error in err's chain matches target.
@@ -43,7 +58,7 @@ func Unwrap(err error) error {
 	return goerrors.Unwrap(err)
 }
 
-// InternalCode of the first error created or wrapped.
+// InternalCode of the first error created or converted.
 // If err does not have an internal code then return empty string.
 func InternalCode(err error) string {
 	var internalCode string
@@ -66,14 +81,19 @@ func Cause(err error) error {
 
 	recurseErrorStack(err, func(err error) {
 		if asCause, ok := err.(*cause); ok {
-			causeErr = asCause
+			if causeErr == nil || causeErr.toErr == nil {
+				causeErr = asCause
+			}
 		}
 		firstErr = err
 	})
 
 	if causeErr != nil {
-		if causeErr.err != nil {
-			return causeErr.err
+		if causeErr.toErr != nil {
+			return causeErr.toErr
+		}
+		if causeErr.fromErr != nil {
+			return causeErr.fromErr
 		}
 		return causeErr
 	}

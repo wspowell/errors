@@ -17,6 +17,10 @@ func fooD() error {
 	return Propagate("fooD", fooC())
 }
 
+func fooE() error {
+	return Convert("fooE", fooD(), DiscreteErr)
+}
+
 func Test_error_Format(t *testing.T) {
 	t.Parallel()
 
@@ -49,13 +53,37 @@ func Test_error_Format(t *testing.T) {
 			about:               "all errors internalErrr - it prints error as value with internal code stack and with stack trace",
 			errorFunc:           fooB,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB][fooA] whoops: this is bad\ngithub.com/wspowell/errors.init",
+			expectedErrorString: "[fooB][fooA] whoops: this is bad\n====[fooA]====\ngithub.com/wspowell/errors.init",
 		},
 		{
 			about:               "all errors internalErrr - it prints error as value with internal code stack and with stack trace nested error",
 			errorFunc:           fooD,
 			formatString:        "%+v",
-			expectedErrorString: "[fooD][fooC] whoops: this is bad\ngithub.com/wspowell/errors.fooC",
+			expectedErrorString: "[fooD][fooC] whoops: this is bad\n====[fooC]====\ngithub.com/wspowell/errors.fooC",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as string",
+			errorFunc:           fooE,
+			formatString:        "%s",
+			expectedErrorString: "concrete error",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as value",
+			errorFunc:           fooE,
+			formatString:        "%v",
+			expectedErrorString: "[fooE] concrete error -> [fooC] whoops: this is bad",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as value with internal code stack",
+			errorFunc:           fooE,
+			formatString:        "%#v",
+			expectedErrorString: "[fooE] concrete error -> [fooD][fooC] whoops: this is bad",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as value with internal code stack and with stack trace nested error",
+			errorFunc:           fooE,
+			formatString:        "%+v",
+			expectedErrorString: "[fooE] concrete error\n====[fooE]====\ngithub.com/wspowell/errors.fooE",
 		},
 		// Root error is golang error.
 		{
@@ -80,7 +108,7 @@ func Test_error_Format(t *testing.T) {
 			about:               "cause error is golang error - it prints error as value with internal code stack and with stack trace",
 			errorFunc:           fooB2,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB] whoops: this is bad\ngithub.com/wspowell/errors.fooB2",
+			expectedErrorString: "[fooB] whoops: this is bad\n====[fooB]====\ngithub.com/wspowell/errors.fooB2",
 		},
 	}
 	for index := range testCases {

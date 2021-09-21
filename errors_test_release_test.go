@@ -8,6 +8,18 @@ import (
 	"testing"
 )
 
+func fooC() error {
+	return New("fooC", "whoops: %s", "this is bad")
+}
+
+func fooD() error {
+	return Propagate("fooD", fooC())
+}
+
+func fooE() error {
+	return Convert("fooE", fooD(), DiscreteErr)
+}
+
 func Test_internalError_Format(t *testing.T) {
 	t.Parallel()
 
@@ -41,6 +53,24 @@ func Test_internalError_Format(t *testing.T) {
 			errorFunc:           fooB,
 			formatString:        "%+v",
 			expectedErrorString: "[fooB][fooA] whoops: this is bad",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as string",
+			errorFunc:           fooE,
+			formatString:        "%s",
+			expectedErrorString: "concrete error",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as value",
+			errorFunc:           fooE,
+			formatString:        "%v",
+			expectedErrorString: "[fooE] concrete error -> [fooC] whoops: this is bad",
+		},
+		{
+			about:               "all errors internalErrr - it prints converted error as value with internal code stack",
+			errorFunc:           fooE,
+			formatString:        "%#v",
+			expectedErrorString: "[fooE] concrete error -> [fooD][fooC] whoops: this is bad",
 		},
 		// Root error is golang error.
 		{

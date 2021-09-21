@@ -15,7 +15,7 @@ type propagated struct {
 }
 
 // newPropagated creates a new propagated error.
-// This attaches an internal code the given error.
+// This wraps the given error with a new internal code.
 func newPropagated(internalCode string, err error) *propagated {
 	return &propagated{
 		internalCode: internalCode,

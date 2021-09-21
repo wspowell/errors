@@ -1,3 +1,4 @@
+//go:build release
 // +build release
 
 package errors
@@ -11,8 +12,10 @@ type cause struct {
 	format       string
 	values       []interface{}
 
-	// Optional. May be present if an error was wrapped.
-	err error
+	// Optional. May be present if an error was propagated or converted.
+	fromErr error
+	// Optional. May be present if an error was converted.
+	toErr error
 }
 
 func newCause(internalCode string, format string, values ...interface{}) *cause {
@@ -20,7 +23,6 @@ func newCause(internalCode string, format string, values ...interface{}) *cause 
 		internalCode: internalCode,
 		format:       format,
 		values:       values,
-		err:          nil,
 	}
 }
 
@@ -29,12 +31,25 @@ func newCauseWithError(internalCode string, err error) *cause {
 		internalCode: internalCode,
 		format:       "%s",
 		values:       []interface{}{err},
-		err:          err,
+		fromErr:      err,
+	}
+}
+
+func newCauseWithErrorConversion(internalCode string, fromErr error, toErr error) *cause {
+	return &cause{
+		internalCode: internalCode,
+		format:       "%s",
+		values:       []interface{}{toErr},
+		fromErr:      fromErr,
+		toErr:        toErr,
 	}
 }
 
 func (self *cause) Unwrap() error {
-	return self.err
+	if self.toErr != nil {
+		return self.toErr
+	}
+	return self.fromErr
 }
 
 func (self *cause) Error() string {
@@ -48,6 +63,12 @@ func (self *cause) Format(state fmt.State, verb rune) {
 	case 'v':
 		fmt.Fprintf(state, "[%s] ", self.internalCode)
 		self.Format(state, 's')
+
+		if self.toErr != nil {
+			// Print the converted errors.
+			fmt.Fprintf(state, " -> ")
+			self.fromErr.(fmt.Formatter).Format(state, verb)
+		}
 	default:
 		self.Format(state, 's')
 	}

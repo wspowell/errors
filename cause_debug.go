@@ -1,3 +1,4 @@
+//go:build !release
 // +build !release
 
 package errors
@@ -11,8 +12,10 @@ type cause struct {
 	format       string
 	values       []interface{}
 
-	// Optional. May be present if an error was wrapped.
-	err error
+	// Optional. May be present if an error was propagated or converted.
+	fromErr error
+	// Optional. May be present if an error was converted.
+	toErr error
 
 	// Debug only.
 	callStack *stack
@@ -23,8 +26,8 @@ func newCause(internalCode string, format string, values ...interface{}) *cause 
 		internalCode: internalCode,
 		format:       format,
 		values:       values,
-		err:          nil,
-		callStack:    callers(),
+
+		callStack: callers(),
 	}
 }
 
@@ -33,13 +36,29 @@ func newCauseWithError(internalCode string, err error) *cause {
 		internalCode: internalCode,
 		format:       "%s",
 		values:       []interface{}{err},
-		err:          err,
-		callStack:    callers(),
+		fromErr:      err,
+
+		callStack: callers(),
+	}
+}
+
+func newCauseWithErrorConversion(internalCode string, fromErr error, toErr error) *cause {
+	return &cause{
+		internalCode: internalCode,
+		format:       "%s",
+		values:       []interface{}{toErr},
+		fromErr:      fromErr,
+		toErr:        toErr,
+
+		callStack: callers(),
 	}
 }
 
 func (self *cause) Unwrap() error {
-	return self.err
+	if self.toErr != nil {
+		return self.toErr
+	}
+	return self.fromErr
 }
 
 func (self *cause) Error() string {
@@ -55,7 +74,19 @@ func (self *cause) Format(state fmt.State, verb rune) {
 		self.Format(state, 's')
 
 		if state.Flag('+') {
+			// Print stack trace.
+			fmt.Fprintf(state, "\n====[%s]====", self.internalCode)
 			self.callStack.Format(state, verb)
+		}
+
+		if self.toErr != nil {
+			// Print the converted errors.
+			if state.Flag('+') {
+				fmt.Fprintf(state, "\n\n")
+			} else {
+				fmt.Fprintf(state, " -> ")
+			}
+			self.fromErr.(fmt.Formatter).Format(state, verb)
 		}
 	default:
 		self.Format(state, 's')

@@ -91,28 +91,28 @@ func Test_Propagate(t *testing.T) {
 		expectedErrorString  string
 	}{
 		{
-			about:                "it creates a new wrapped error with the given cause",
+			about:                "it creates a new propagated error with the given cause",
 			internalCode:         "ER1001",
 			err:                  New("ER1000", "whoops"),
 			expectedInternalCode: "ER1000",
 			expectedErrorString:  "whoops",
 		},
 		{
-			about:                "it creates a new wrapped error with the given error",
+			about:                "it creates a new propagated error with the given error",
 			internalCode:         "ER1001",
 			err:                  fmt.Errorf("whoops"),
 			expectedInternalCode: "ER1001",
 			expectedErrorString:  "whoops",
 		},
 		{
-			about:                "it creates a new wrapped error when internal code is empty",
+			about:                "it creates a new propagated error when internal code is empty",
 			internalCode:         "",
 			err:                  fmt.Errorf("whoops"),
 			expectedInternalCode: "",
 			expectedErrorString:  "whoops",
 		},
 		{
-			about:                "it creates a new wrapped error when error is nil",
+			about:                "it creates a new propagated error when error is nil",
 			internalCode:         "ER1001",
 			err:                  nil,
 			expectedInternalCode: "ER1001",
@@ -144,6 +144,121 @@ func Test_Propagate(t *testing.T) {
 	}
 }
 
+var (
+	DiscreteErr       = New("DISCRETE", "concrete error")
+	DiscreteGolangErr = fmt.Errorf("concrete golang error")
+)
+
+func Test_Convert(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		about                string
+		fromErr              error
+		toErr                error
+		expectedInternalCode string
+		expectedErrorString  string
+	}{
+		{
+			about:                "it creates a new converted error with the given cause",
+			fromErr:              New("ER1000", "whoops"),
+			toErr:                DiscreteErr,
+			expectedInternalCode: "DISCRETE",
+			expectedErrorString:  "concrete error",
+		},
+		{
+			about:                "it creates a new converted error with the given error",
+			fromErr:              fmt.Errorf("whoops"),
+			toErr:                DiscreteErr,
+			expectedInternalCode: "DISCRETE",
+			expectedErrorString:  "concrete error",
+		},
+		{
+			about:                "it creates a new converted error when error is nil",
+			fromErr:              nil,
+			toErr:                DiscreteErr,
+			expectedInternalCode: "DISCRETE",
+			expectedErrorString:  "concrete error",
+		},
+		{
+			about:                "it passes back original error when discrete error is nil",
+			fromErr:              New("ER1000", "whoops"),
+			toErr:                nil,
+			expectedInternalCode: "ER1000",
+			expectedErrorString:  "whoops",
+		},
+		// Golang errors.
+		{
+			about:                "it creates a new golang wrapped error with the given cause",
+			fromErr:              New("ER1000", "whoops"),
+			toErr:                DiscreteGolangErr,
+			expectedInternalCode: "ER9999",
+			expectedErrorString:  "concrete golang error",
+		},
+		{
+			about:                "it creates a new golang wrapped error with the given error",
+			fromErr:              fmt.Errorf("whoops"),
+			toErr:                DiscreteGolangErr,
+			expectedInternalCode: "ER9999",
+			expectedErrorString:  "concrete golang error",
+		},
+		{
+			about:                "it creates a new golang wrapped error when internal code is empty",
+			fromErr:              fmt.Errorf("whoops"),
+			toErr:                DiscreteGolangErr,
+			expectedInternalCode: "ER9999",
+			expectedErrorString:  "concrete golang error",
+		},
+		{
+			about:                "it creates a new golang wrapped error when error is nil",
+			fromErr:              nil,
+			toErr:                DiscreteGolangErr,
+			expectedInternalCode: "ER9999",
+			expectedErrorString:  "concrete golang error",
+		},
+		{
+			about:                "it passes back original golang error when discrete error is nil",
+			fromErr:              fmt.Errorf("whoops"),
+			toErr:                nil,
+			expectedInternalCode: "ER9999",
+			expectedErrorString:  "whoops",
+		},
+	}
+	for index := range testCases {
+		testCase := testCases[index]
+		t.Run(testCase.about, func(t *testing.T) {
+			t.Parallel()
+
+			err := Convert("ER9999", testCase.fromErr, testCase.toErr)
+
+			if err == nil {
+				t.Errorf("created internal error is nil")
+				return
+			}
+
+			if InternalCode(err) != testCase.expectedInternalCode {
+				t.Errorf("expected internal code '%v', got '%v'", testCase.expectedInternalCode, InternalCode(err))
+				return
+			}
+
+			if err.Error() != testCase.expectedErrorString {
+				t.Errorf("expected error '%v', got '%v'", testCase.expectedErrorString, err.Error())
+				return
+			}
+
+			if testCase.toErr != nil && !Is(err, testCase.toErr) {
+				t.Errorf("expected error to be converted error, but is not")
+				return
+			}
+
+			if testCase.toErr != nil && Is(err, testCase.fromErr) {
+				t.Errorf("expected error to no longer be original error, but is")
+				return
+			}
+		})
+	}
+}
+
 func Test_Cause(t *testing.T) {
 	t.Parallel()
 
@@ -166,6 +281,50 @@ func Test_Cause(t *testing.T) {
 			about:         "it shows golang error as cause when no cause error",
 			errorFunc:     fooA2,
 			expectedCause: errFooA2,
+		},
+		// Propagated errors.
+		{
+			about: "it shows propagated error as cause",
+			errorFunc: func() error {
+				return Propagate("ER9999", fooB())
+			},
+			expectedCause: errFooA,
+		},
+		{
+			about: "it shows propagated golang error as cause",
+			errorFunc: func() error {
+				return Propagate("ER9999", fooB2())
+			},
+			expectedCause: errFooA2,
+		},
+		{
+			about: "it shows propagated golang error as cause when no cause error",
+			errorFunc: func() error {
+				return Propagate("ER9999", fooA2())
+			},
+			expectedCause: errFooA2,
+		},
+		// Converted errors.
+		{
+			about: "it shows converted error as cause",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB(), DiscreteErr)
+			},
+			expectedCause: DiscreteErr,
+		},
+		{
+			about: "it shows converted golang error as cause",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB2(), DiscreteErr)
+			},
+			expectedCause: DiscreteErr,
+		},
+		{
+			about: "it shows converted golang error as cause when no cause error",
+			errorFunc: func() error {
+				return Convert("ER9999", fooA2(), DiscreteGolangErr)
+			},
+			expectedCause: DiscreteGolangErr,
 		},
 	}
 	for index := range testCases {
@@ -200,6 +359,36 @@ func Test_InternalCode(t *testing.T) {
 			errorFunc:            fooB2,
 			expectedInternalCode: "fooB",
 		},
+		// Propagated errors.
+		{
+			about: "it shows Propagated error internal code where cause is internalError",
+			errorFunc: func() error {
+				return Propagate("ER9999", fooB())
+			},
+			expectedInternalCode: "fooA",
+		},
+		{
+			about: "it shows error internal code where cause is golang error",
+			errorFunc: func() error {
+				return Propagate("ER9999", fooB2())
+			},
+			expectedInternalCode: "fooB",
+		},
+		// Converted errors.
+		{
+			about: "it shows Propagated error internal code where cause is internalError",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB(), DiscreteErr)
+			},
+			expectedInternalCode: "DISCRETE",
+		},
+		{
+			about: "it shows error internal code where cause is golang error",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB2(), DiscreteErr)
+			},
+			expectedInternalCode: "DISCRETE",
+		},
 	}
 	for index := range testCases {
 		testCase := testCases[index]
@@ -218,6 +407,9 @@ func Test_InternalCode(t *testing.T) {
 func Test_Unwrap(t *testing.T) {
 	t.Parallel()
 
+	errA := fooB()
+	errA2 := fooB2()
+
 	testCases := []struct {
 		about         string
 		errorFunc     func() error
@@ -233,6 +425,36 @@ func Test_Unwrap(t *testing.T) {
 			errorFunc:     fooB2,
 			expectedError: errFooA2,
 		},
+		// Propagated errors.
+		{
+			about: "it unwraps propagated internalError",
+			errorFunc: func() error {
+				return Propagate("ER9999", errA)
+			},
+			expectedError: errA,
+		},
+		{
+			about: "it unwraps propagated golang error",
+			errorFunc: func() error {
+				return Propagate("ER9999", errA2)
+			},
+			expectedError: errA2,
+		},
+		// Converted errors.
+		{
+			about: "it unwraps converted internalError",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB(), DiscreteErr)
+			},
+			expectedError: DiscreteErr,
+		},
+		{
+			about: "it unwraps converted golang error",
+			errorFunc: func() error {
+				return Convert("ER9999", fooB2(), DiscreteErr)
+			},
+			expectedError: DiscreteErr,
+		},
 	}
 	for index := range testCases {
 		testCase := testCases[index]
@@ -242,7 +464,7 @@ func Test_Unwrap(t *testing.T) {
 			err := testCase.errorFunc()
 			actual := Unwrap(err)
 			if actual != testCase.expectedError {
-				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, actual)
+				t.Errorf("expected '%+v', but got '%+v'", testCase.expectedError, actual)
 			}
 
 			if testCase.expectedError == errFooA {
