@@ -38,5 +38,8 @@ func (self *propagated) Format(state fmt.State, verb rune) {
 	}
 
 	// Call Format for propagated errors.
-	self.err.(fmt.Formatter).Format(state, verb)
+	// nolint:errorlint // reason: type conversion, not an error check.
+	if formatter, ok := self.err.(fmt.Formatter); ok {
+		formatter.Format(state, verb)
+	}
 }

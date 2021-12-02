@@ -17,7 +17,7 @@ func fooD() error {
 }
 
 func fooE() error {
-	return Convert("fooE", fooD(), DiscreteErr)
+	return Convert("fooE", fooD(), ErrDiscrete)
 }
 
 func Test_internalError_Format(t *testing.T) {
@@ -64,7 +64,7 @@ func Test_internalError_Format(t *testing.T) {
 			about:               "all errors internalErrr - it prints converted error as value",
 			errorFunc:           fooE,
 			formatString:        "%v",
-			expectedErrorString: "[fooE] concrete error -> [fooC] whoops: this is bad",
+			expectedErrorString: "[fooE] concrete error",
 		},
 		{
 			about:               "all errors internalErrr - it prints converted error as value with internal code stack",

@@ -1,6 +1,8 @@
 package errors
 
 import (
+
+	// nolint:depguard // reason: import to shadow the package
 	goerrors "errors"
 )
 
@@ -18,6 +20,7 @@ func Propagate(internalCode string, err error) error {
 	if As(err, &causeErr) {
 		return newPropagated(internalCode, err)
 	}
+
 	return newCauseWithError(internalCode, err)
 }
 
@@ -33,6 +36,7 @@ func Convert(internalCode string, fromErr error, toErr error) error {
 	if fromErr == nil {
 		return Propagate(internalCode, toErr)
 	}
+
 	return newCauseWithErrorConversion(internalCode, fromErr, toErr)
 }
 
@@ -55,6 +59,7 @@ func As(err error, target interface{}) bool {
 // Otherwise, Unwrap returns nil.
 // See: https://golang.org/pkg/errors/#Unwrap
 func Unwrap(err error) error {
+	// nolint:wrapcheck // reason: passthrough for shadowing errors package
 	return goerrors.Unwrap(err)
 }
 
@@ -64,6 +69,7 @@ func InternalCode(err error) string {
 	var internalCode string
 
 	recurseErrorStack(err, func(err error) {
+		// nolint:errorlint // reason: recurse over each error explicitly
 		if asCause, ok := err.(*cause); ok {
 			internalCode = asCause.internalCode
 		}
@@ -80,6 +86,7 @@ func Cause(err error) error {
 	var causeErr *cause
 
 	recurseErrorStack(err, func(err error) {
+		// nolint:errorlint // reason: recurse over each error explicitly
 		if asCause, ok := err.(*cause); ok {
 			if causeErr == nil || causeErr.toErr == nil {
 				causeErr = asCause
@@ -95,6 +102,7 @@ func Cause(err error) error {
 		if causeErr.fromErr != nil {
 			return causeErr.fromErr
 		}
+
 		return causeErr
 	}
 

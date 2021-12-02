@@ -26,6 +26,7 @@ func (f Frame) file() string {
 		return "unknown"
 	}
 	file, _ := fn.FileLine(f.pc())
+
 	return file
 }
 
@@ -37,6 +38,7 @@ func (f Frame) line() int {
 		return 0
 	}
 	_, line := fn.FileLine(f.pc())
+
 	return line
 }
 
@@ -46,6 +48,7 @@ func (f Frame) name() string {
 	if fn == nil {
 		return "unknown"
 	}
+
 	return fn.Name()
 }
 
@@ -65,17 +68,17 @@ func (f Frame) Format(s fmt.State, verb rune) {
 	case 's':
 		switch {
 		case s.Flag('+'):
-			io.WriteString(s, f.name())
-			io.WriteString(s, "\n\t")
-			io.WriteString(s, f.file())
+			io.WriteString(s, f.name()) // nolint:errcheck // reason: no real action to take
+			io.WriteString(s, "\n\t")   // nolint:errcheck // reason: no real action to take
+			io.WriteString(s, f.file()) // nolint:errcheck // reason: no real action to take
 		default:
-			io.WriteString(s, path.Base(f.file()))
+			io.WriteString(s, path.Base(f.file())) // nolint:errcheck // reason: no real action to take
 		}
 	case 'd':
-		io.WriteString(s, strconv.Itoa(f.line()))
+		io.WriteString(s, strconv.Itoa(f.line())) // nolint:errcheck // reason: no real action to take
 	case 'v':
 		f.Format(s, 's')
-		io.WriteString(s, ":")
+		io.WriteString(s, ":") // nolint:errcheck // reason: no real action to take
 		f.Format(s, 'd')
 	}
 }
@@ -94,12 +97,4 @@ func (s *stack) Format(st fmt.State, verb rune) {
 			}
 		}
 	}
-}
-
-func callers() *stack {
-	const depth = 32
-	var pcs [depth]uintptr
-	n := runtime.Callers(4, pcs[:])
-	var st stack = pcs[0:n]
-	return &st
 }

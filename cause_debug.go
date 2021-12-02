@@ -58,6 +58,7 @@ func (self *cause) Unwrap() error {
 	if self.toErr != nil {
 		return self.toErr
 	}
+
 	return self.fromErr
 }
 
@@ -83,10 +84,17 @@ func (self *cause) Format(state fmt.State, verb rune) {
 			// Print the converted errors.
 			if state.Flag('+') {
 				fmt.Fprintf(state, "\n\n")
-			} else {
+			} else if state.Flag('#') {
 				fmt.Fprintf(state, " -> ")
+			} else {
+				// Do not print the converted from error.
+				break
 			}
-			self.fromErr.(fmt.Formatter).Format(state, verb)
+
+			// nolint:errorlint // reason: type conversion, not an error check.
+			if formatter, ok := self.fromErr.(fmt.Formatter); ok {
+				formatter.Format(state, verb)
+			}
 		}
 	default:
 		self.Format(state, 's')

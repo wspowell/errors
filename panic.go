@@ -10,13 +10,15 @@ const (
 )
 
 var (
-	Panic = New(icPanic, "recovered panic")
+	ErrPanic = New(icPanic, "recovered panic")
 )
 
 func Recover(errPanic interface{}) error {
 	if errPanic != nil {
-		return fmt.Errorf("%w: %v%+v", Panic, errPanic, panicCallers())
+		// nolint:wrapcheck // reason: passthrough for handling panic error
+		return fmt.Errorf("%w: %v%+v", ErrPanic, errPanic, panicCallers())
 	}
+
 	return nil
 }
 
@@ -37,5 +39,6 @@ func panicCallers() *stack {
 	var pcs [depth]uintptr
 	n := runtime.Callers(5, pcs[:])
 	var st stack = pcs[0:n]
+
 	return &st
 }

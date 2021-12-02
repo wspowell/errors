@@ -3,9 +3,9 @@ package errors_test
 import (
 	"testing"
 
-	"github.com/wspowell/errors"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/wspowell/errors"
 )
 
 const (
@@ -46,7 +46,7 @@ func Test_Catch_closure(t *testing.T) {
 		panicFunction()
 	})
 
-	assert.ErrorIs(t, err, errors.Panic)
+	assert.ErrorIs(t, err, errors.ErrPanic)
 	assert.Contains(t, err.Error(), expectedCatchStackTrace)
 }
 
@@ -61,7 +61,7 @@ func Test_Catch_function(t *testing.T) {
 
 	err := errors.Catch(doThing)
 
-	assert.ErrorIs(t, err, errors.Panic)
+	assert.ErrorIs(t, err, errors.ErrPanic)
 	assert.Contains(t, err.Error(), expectedCatchStackTrace)
 }
 
@@ -89,6 +89,6 @@ func Test_Recover_nested(t *testing.T) {
 	}()
 
 	err := doThingAgain()
-	assert.ErrorIs(t, err, errors.Panic)
+	assert.ErrorIs(t, err, errors.ErrPanic)
 	assert.Contains(t, err.Error(), expectedRecoverStackTrace)
 }

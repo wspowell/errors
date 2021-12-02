@@ -4,6 +4,9 @@ prereq:
 	go install gotest.tools/gotestsum@latest
 
 build:
+	golangci-lint run
+	golangci-lint run --build-tags release
+
 	go build ./...
 	go build -tags release ./...
 

@@ -19,6 +19,7 @@ func fooB() error {
 }
 
 func fooA2() error {
+	// nolint:wrapcheck // reason: not wrapped for testing
 	return errFooA2
 }
 
@@ -62,18 +63,21 @@ func Test_New(t *testing.T) {
 
 			if err == nil {
 				t.Errorf("created internal error is nil")
+
+				return
+			}
+
+			// nolint:errorlint // reason: test should check the exact value, not find one in the error chain
+			if err.(*cause).internalCode != testCase.internalCode {
+				t.Errorf("expected internal code '%v', got '%v'", testCase.internalCode, err.(*cause).internalCode)
+
 				return
 			}
 
 			expectedErrorString := fmt.Sprintf(testCase.format, testCase.values...)
-
-			if err.(*cause).internalCode != testCase.internalCode {
-				t.Errorf("expected internal code '%v', got '%v'", expectedErrorString, err)
-				return
-			}
-
 			if err.Error() != expectedErrorString {
 				t.Errorf("expected error '%v', got '%v'", expectedErrorString, err)
+
 				return
 			}
 		})
@@ -100,14 +104,14 @@ func Test_Propagate(t *testing.T) {
 		{
 			about:                "it creates a new propagated error with the given error",
 			internalCode:         "ER1001",
-			err:                  fmt.Errorf("whoops"),
+			err:                  fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
 			expectedInternalCode: "ER1001",
 			expectedErrorString:  "whoops",
 		},
 		{
 			about:                "it creates a new propagated error when internal code is empty",
 			internalCode:         "",
-			err:                  fmt.Errorf("whoops"),
+			err:                  fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
 			expectedInternalCode: "",
 			expectedErrorString:  "whoops",
 		},
@@ -128,16 +132,19 @@ func Test_Propagate(t *testing.T) {
 
 			if err == nil {
 				t.Errorf("created internal error is nil")
+
 				return
 			}
 
 			if InternalCode(err) != testCase.expectedInternalCode {
 				t.Errorf("expected internal code '%v', got '%v'", testCase.expectedInternalCode, InternalCode(err))
+
 				return
 			}
 
 			if err.Error() != testCase.expectedErrorString {
 				t.Errorf("expected error '%v', got '%v'", testCase.expectedErrorString, err.Error())
+
 				return
 			}
 		})
@@ -145,8 +152,8 @@ func Test_Propagate(t *testing.T) {
 }
 
 var (
-	DiscreteErr       = New("DISCRETE", "concrete error")
-	DiscreteGolangErr = fmt.Errorf("concrete golang error")
+	ErrDiscrete       = New("DISCRETE", "concrete error")
+	ErrDiscreteGolang = fmt.Errorf("concrete golang error")
 )
 
 func Test_Convert(t *testing.T) {
@@ -162,21 +169,21 @@ func Test_Convert(t *testing.T) {
 		{
 			about:                "it creates a new converted error with the given cause",
 			fromErr:              New("ER1000", "whoops"),
-			toErr:                DiscreteErr,
+			toErr:                ErrDiscrete,
 			expectedInternalCode: "DISCRETE",
 			expectedErrorString:  "concrete error",
 		},
 		{
 			about:                "it creates a new converted error with the given error",
-			fromErr:              fmt.Errorf("whoops"),
-			toErr:                DiscreteErr,
+			fromErr:              fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
+			toErr:                ErrDiscrete,
 			expectedInternalCode: "DISCRETE",
 			expectedErrorString:  "concrete error",
 		},
 		{
 			about:                "it creates a new converted error when error is nil",
 			fromErr:              nil,
-			toErr:                DiscreteErr,
+			toErr:                ErrDiscrete,
 			expectedInternalCode: "DISCRETE",
 			expectedErrorString:  "concrete error",
 		},
@@ -191,34 +198,34 @@ func Test_Convert(t *testing.T) {
 		{
 			about:                "it creates a new golang wrapped error with the given cause",
 			fromErr:              New("ER1000", "whoops"),
-			toErr:                DiscreteGolangErr,
+			toErr:                ErrDiscreteGolang,
 			expectedInternalCode: "ER9999",
 			expectedErrorString:  "concrete golang error",
 		},
 		{
 			about:                "it creates a new golang wrapped error with the given error",
-			fromErr:              fmt.Errorf("whoops"),
-			toErr:                DiscreteGolangErr,
+			fromErr:              fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
+			toErr:                ErrDiscreteGolang,
 			expectedInternalCode: "ER9999",
 			expectedErrorString:  "concrete golang error",
 		},
 		{
 			about:                "it creates a new golang wrapped error when internal code is empty",
-			fromErr:              fmt.Errorf("whoops"),
-			toErr:                DiscreteGolangErr,
+			fromErr:              fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
+			toErr:                ErrDiscreteGolang,
 			expectedInternalCode: "ER9999",
 			expectedErrorString:  "concrete golang error",
 		},
 		{
 			about:                "it creates a new golang wrapped error when error is nil",
 			fromErr:              nil,
-			toErr:                DiscreteGolangErr,
+			toErr:                ErrDiscreteGolang,
 			expectedInternalCode: "ER9999",
 			expectedErrorString:  "concrete golang error",
 		},
 		{
 			about:                "it passes back original golang error when discrete error is nil",
-			fromErr:              fmt.Errorf("whoops"),
+			fromErr:              fmt.Errorf("whoops"), // nolint:goerr113 // reason: error created for test
 			toErr:                nil,
 			expectedInternalCode: "ER9999",
 			expectedErrorString:  "whoops",
@@ -233,26 +240,31 @@ func Test_Convert(t *testing.T) {
 
 			if err == nil {
 				t.Errorf("created internal error is nil")
+
 				return
 			}
 
 			if InternalCode(err) != testCase.expectedInternalCode {
 				t.Errorf("expected internal code '%v', got '%v'", testCase.expectedInternalCode, InternalCode(err))
+
 				return
 			}
 
 			if err.Error() != testCase.expectedErrorString {
 				t.Errorf("expected error '%v', got '%v'", testCase.expectedErrorString, err.Error())
+
 				return
 			}
 
 			if testCase.toErr != nil && !Is(err, testCase.toErr) {
 				t.Errorf("expected error to be converted error, but is not")
+
 				return
 			}
 
 			if testCase.toErr != nil && Is(err, testCase.fromErr) {
 				t.Errorf("expected error to no longer be original error, but is")
+
 				return
 			}
 		})
@@ -308,23 +320,23 @@ func Test_Cause(t *testing.T) {
 		{
 			about: "it shows converted error as cause",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB(), DiscreteErr)
+				return Convert("ER9999", fooB(), ErrDiscrete)
 			},
-			expectedCause: DiscreteErr,
+			expectedCause: ErrDiscrete,
 		},
 		{
 			about: "it shows converted golang error as cause",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB2(), DiscreteErr)
+				return Convert("ER9999", fooB2(), ErrDiscrete)
 			},
-			expectedCause: DiscreteErr,
+			expectedCause: ErrDiscrete,
 		},
 		{
 			about: "it shows converted golang error as cause when no cause error",
 			errorFunc: func() error {
-				return Convert("ER9999", fooA2(), DiscreteGolangErr)
+				return Convert("ER9999", fooA2(), ErrDiscreteGolang)
 			},
-			expectedCause: DiscreteGolangErr,
+			expectedCause: ErrDiscreteGolang,
 		},
 	}
 	for index := range testCases {
@@ -334,6 +346,7 @@ func Test_Cause(t *testing.T) {
 
 			err := testCase.errorFunc()
 			actual := Cause(err)
+			// nolint:errorlint,goerr113 // reason: test should check the exact value, not find one in the error chain
 			if actual != testCase.expectedCause {
 				t.Errorf("expected %s (%p), but got %s (%p)", testCase.expectedCause, testCase.expectedCause, actual, actual)
 			}
@@ -378,14 +391,14 @@ func Test_InternalCode(t *testing.T) {
 		{
 			about: "it shows Propagated error internal code where cause is internalError",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB(), DiscreteErr)
+				return Convert("ER9999", fooB(), ErrDiscrete)
 			},
 			expectedInternalCode: "DISCRETE",
 		},
 		{
 			about: "it shows error internal code where cause is golang error",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB2(), DiscreteErr)
+				return Convert("ER9999", fooB2(), ErrDiscrete)
 			},
 			expectedInternalCode: "DISCRETE",
 		},
@@ -444,16 +457,16 @@ func Test_Unwrap(t *testing.T) {
 		{
 			about: "it unwraps converted internalError",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB(), DiscreteErr)
+				return Convert("ER9999", fooB(), ErrDiscrete)
 			},
-			expectedError: DiscreteErr,
+			expectedError: ErrDiscrete,
 		},
 		{
 			about: "it unwraps converted golang error",
 			errorFunc: func() error {
-				return Convert("ER9999", fooB2(), DiscreteErr)
+				return Convert("ER9999", fooB2(), ErrDiscrete)
 			},
-			expectedError: DiscreteErr,
+			expectedError: ErrDiscrete,
 		},
 	}
 	for index := range testCases {
@@ -463,11 +476,13 @@ func Test_Unwrap(t *testing.T) {
 
 			err := testCase.errorFunc()
 			actual := Unwrap(err)
+			// nolint:errorlint,goerr113 // reason: test should check the exact value, not find one in the error chain
 			if actual != testCase.expectedError {
 				t.Errorf("expected '%+v', but got '%+v'", testCase.expectedError, actual)
 			}
 
-			if testCase.expectedError == errFooA {
+			// nolint:errorlint,goerr113 // reason: test should check the exact value, not find one in the error chain
+			if errFooA == testCase.expectedError {
 				if err.(*propagated).Unwrap() != Unwrap(err) {
 					t.Errorf("unwraps are not equal")
 				}
@@ -502,7 +517,7 @@ func Test_Is(t *testing.T) {
 
 			err := testCase.errorFunc()
 			if !Is(err, testCase.expectedError) {
-				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, err)
+				t.Errorf("expected '%s' %p, but got '%s' %p", testCase.expectedError, testCase.expectedError, err, err)
 			}
 		})
 	}
@@ -526,7 +541,7 @@ func Test_As(t *testing.T) {
 		{
 			about:         "it is a golang error",
 			errorFunc:     fooB2,
-			asErr:         fmt.Errorf(""),
+			asErr:         fmt.Errorf(""), // nolint:goerr113 // reason: error created for test
 			expectedError: errFooA2,
 		},
 	}
@@ -541,7 +556,7 @@ func Test_As(t *testing.T) {
 				t.Errorf("not the error expected")
 			}
 			if !Is(testCase.asErr, testCase.expectedError) {
-				t.Errorf("expected '%s', but got '%s'", testCase.expectedError, testCase.asErr)
+				t.Errorf("expected '%s' %p, but got '%s' %p", testCase.expectedError, testCase.expectedError, testCase.asErr, testCase.asErr)
 			}
 		})
 	}
