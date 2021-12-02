@@ -136,7 +136,8 @@ Format verbs and flags
 * '%#v' - prints the error message with all internal codes in the error chain, left most is latest and right most is the cause
     * ie `[app-1][1111][aaaa] error doing the thing`
 * '%+v' - prints the error message with all internal codes in the error chain along with the stack trace
-    * ie ```
+    * ie 
+```
 [fooD][fooC] whoops: this is bad
 ====[fooC]====
 github.com/wspowell/errors.fooC
