@@ -92,7 +92,8 @@ Format verbs and flags
 * '%+v' - (release) identical to '%#v'
     * ie `rewrapped -> wrapped -> cause`
 * '%+v' - (debug) prints the error message with all internal codes in the error chain along with the stack trace
-    * ie ```
+    * ie 
+```
 rewrapped -> wrapped
 github.com/wspowell/errors.returnGolangWrappedTwice
 	/workspaces/errors/errors_internal_test.go:38
