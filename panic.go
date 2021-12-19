@@ -2,21 +2,16 @@ package errors
 
 import (
 	"fmt"
-	"runtime"
-)
-
-const (
-	icPanic = "PANIC"
 )
 
 var (
-	ErrPanic = New(icPanic, "recovered panic")
+	ErrPanic = New("recovered panic")
 )
 
-func Recover(errPanic interface{}) error {
+func Recover(errPanic any) error {
 	if errPanic != nil {
 		// nolint:wrapcheck // reason: passthrough for handling panic error
-		return fmt.Errorf("%w: %v%+v", ErrPanic, errPanic, panicCallers())
+		return fmt.Errorf("%w: %v%+v", ErrPanic, errPanic, callers(callersSkipPanic))
 	}
 
 	return nil
@@ -32,13 +27,4 @@ func Catch(fn func()) (err error) {
 	fn()
 
 	return nil
-}
-
-func panicCallers() *stack {
-	const depth = 32
-	var pcs [depth]uintptr
-	n := runtime.Callers(5, pcs[:])
-	var st stack = pcs[0:n]
-
-	return &st
 }

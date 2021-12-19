@@ -35,6 +35,8 @@ linters:
     - nestif
     - wsl
     - cyclop
+    # - goanalysis_metalinter # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
+    # - staticcheck # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
   fast: false
 
 severity:

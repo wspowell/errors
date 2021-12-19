@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	expectedCatchStackTrace   = "[PANIC] recovered panic: expected\ngithub.com/wspowell/errors_test.panicFunction"
-	expectedRecoverStackTrace = "[PANIC] recovered panic: expected\ngithub.com/wspowell/errors_test.recoverPanicAsError"
+	expectedCatchStackTrace   = "recovered panic: expected\ngithub.com/wspowell/errors_test.panicFunction"
+	expectedRecoverStackTrace = "recovered panic: expected\ngithub.com/wspowell/errors_test.recoverPanicAsError"
 )
 
 func panicFunction() {

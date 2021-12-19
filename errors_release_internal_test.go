@@ -8,19 +8,7 @@ import (
 	"testing"
 )
 
-func fooC() error {
-	return New("fooC", "whoops: %s", "this is bad")
-}
-
-func fooD() error {
-	return Propagate("fooD", fooC())
-}
-
-func fooE() error {
-	return Convert("fooE", fooD(), ErrDiscrete)
-}
-
-func Test_internalError_Format(t *testing.T) {
+func Test_error_Format(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -29,73 +17,126 @@ func Test_internalError_Format(t *testing.T) {
 		formatString        string
 		expectedErrorString string
 	}{
-		// All errors are internalError.
 		{
-			about:               "all errors internalErrr - it prints error as string",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as string",
+			errorFunc:           returnCause,
 			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value",
+			errorFunc:           returnCause,
 			formatString:        "%v",
-			expectedErrorString: "[fooA] whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value",
+			errorFunc:           returnCause,
 			formatString:        "%#v",
-			expectedErrorString: "[fooB][fooA] whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack and with no stack trace",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value and stack trace",
+			errorFunc:           returnCause,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB][fooA] whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as string",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as string",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%s",
-			expectedErrorString: "concrete error",
+			expectedErrorString: "wrapped",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as value",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as value",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%v",
-			expectedErrorString: "[fooE] concrete error",
+			expectedErrorString: "wrapped",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as value with internal code stack",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as value with wrapped error",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%#v",
-			expectedErrorString: "[fooE] concrete error -> [fooD][fooC] whoops: this is bad",
-		},
-		// Root error is golang error.
-		{
-			about:               "cause error is golang error - it prints error as string",
-			errorFunc:           fooB2,
-			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
+			expectedErrorString: "wrapped -> cause: error",
 		},
 		{
-			about:               "cause error is golang error - it prints error as value",
-			errorFunc:           fooB2,
-			formatString:        "%v",
-			expectedErrorString: "[fooB] whoops: this is bad",
-		},
-		{
-			about:               "cause error is golang error - it prints error as value with internal code stack",
-			errorFunc:           fooB2,
-			formatString:        "%#v",
-			expectedErrorString: "[fooB] whoops: this is bad",
-		},
-		{
-			about:               "cause error is golang error - it prints error as value with internal code stack and with no stack trace",
-			errorFunc:           fooB2,
+			about:               "wrapped cause error - it prints wrapped error as value with wrapped error and stack trace",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB] whoops: this is bad",
+			expectedErrorString: "wrapped -> cause: error",
+		},
+		{
+			about:               "rewrapped cause error - it prints wrapped error as string",
+			errorFunc:           returnCauseWrappedTwice,
+			formatString:        "%s",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped cause error - it prints wrapped error as value",
+			errorFunc:           returnCauseWrappedTwice,
+			formatString:        "%v",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped cause error - it prints wrapped error as value with wrapped error",
+			errorFunc:           returnCauseWrappedTwice,
+			formatString:        "%#v",
+			expectedErrorString: "rewrapped -> wrapped -> cause: error",
+		},
+		{
+			about:               "rewrapped cause error - it prints wrapped error as value with wrapped error and stack trace",
+			errorFunc:           returnCauseWrappedTwice,
+			formatString:        "%+v",
+			expectedErrorString: "rewrapped -> wrapped -> cause: error",
+		},
+		// golang errors.
+		{
+			about:               "wrapped golang error - it prints error as string",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%s",
+			expectedErrorString: "wrapped",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%v",
+			expectedErrorString: "wrapped",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value with wrapped error",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%#v",
+			expectedErrorString: "wrapped -> golang: error",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value with wrapped error with stack trace",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%+v",
+			expectedErrorString: "wrapped -> golang: error",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as string",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%s",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%v",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value with wrapped error",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%#v",
+			expectedErrorString: "rewrapped -> wrapped -> golang: error",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value with wrapped error with stack trace",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%+v",
+			expectedErrorString: "rewrapped -> wrapped -> golang: error",
 		},
 	}
 	for index := range testCases {
@@ -107,8 +148,14 @@ func Test_internalError_Format(t *testing.T) {
 
 			actual := fmt.Sprintf(testCase.formatString, err)
 
-			if actual != testCase.expectedErrorString {
-				t.Errorf("expected %s, but got %s", testCase.expectedErrorString, actual)
+			if testCase.formatString == "%+v" {
+				if actual != testCase.expectedErrorString {
+					t.Errorf("expected '%s', but got '%s'", testCase.expectedErrorString, actual)
+				}
+			} else {
+				if actual != testCase.expectedErrorString {
+					t.Errorf("expected '%s', but got '%s'", testCase.expectedErrorString, actual)
+				}
 			}
 		})
 	}

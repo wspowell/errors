@@ -5,21 +5,8 @@ package errors
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
-
-func fooC() error {
-	return New("fooC", "whoops: %s", "this is bad")
-}
-
-func fooD() error {
-	return Propagate("fooD", fooC())
-}
-
-func fooE() error {
-	return Convert("fooE", fooD(), ErrDiscrete)
-}
 
 func Test_error_Format(t *testing.T) {
 	t.Parallel()
@@ -30,85 +17,126 @@ func Test_error_Format(t *testing.T) {
 		formatString        string
 		expectedErrorString string
 	}{
-		// All errors are internalError.
 		{
-			about:               "all errors internalErrr - it prints error as string",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as string",
+			errorFunc:           returnCause,
 			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value",
+			errorFunc:           returnCause,
 			formatString:        "%v",
-			expectedErrorString: "[fooA] whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value",
+			errorFunc:           returnCause,
 			formatString:        "%#v",
-			expectedErrorString: "[fooB][fooA] whoops: this is bad",
+			expectedErrorString: "cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack and with stack trace",
-			errorFunc:           fooB,
+			about:               "cause error - it prints error as value and stack trace",
+			errorFunc:           returnCause,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB][fooA] whoops: this is bad\n====[fooA]====\ngithub.com/wspowell/errors.init",
+			expectedErrorString: "cause: error\ngithub.com/wspowell/errors.init\n\t/workspaces/errors/errors_internal_test.go:9\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6417\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6394\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:238\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571",
 		},
 		{
-			about:               "all errors internalErrr - it prints error as value with internal code stack and with stack trace nested error",
-			errorFunc:           fooD,
-			formatString:        "%+v",
-			expectedErrorString: "[fooD][fooC] whoops: this is bad\n====[fooC]====\ngithub.com/wspowell/errors.fooC",
-		},
-		{
-			about:               "all errors internalErrr - it prints converted error as string",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as string",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%s",
-			expectedErrorString: "concrete error",
+			expectedErrorString: "wrapped",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as value",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as value",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%v",
-			expectedErrorString: "[fooE] concrete error",
+			expectedErrorString: "wrapped",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as value with internal code stack",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as value with wrapped error",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%#v",
-			expectedErrorString: "[fooE] concrete error -> [fooD][fooC] whoops: this is bad",
+			expectedErrorString: "wrapped -> cause: error",
 		},
 		{
-			about:               "all errors internalErrr - it prints converted error as value with internal code stack and with stack trace nested error",
-			errorFunc:           fooE,
+			about:               "wrapped cause error - it prints wrapped error as value with wrapped error and stack trace",
+			errorFunc:           returnCauseWrapped,
 			formatString:        "%+v",
-			expectedErrorString: "[fooE] concrete error\n====[fooE]====\ngithub.com/wspowell/errors.fooE",
+			expectedErrorString: "wrapped -> cause: error\ngithub.com/wspowell/errors.returnCauseWrapped\n\t/workspaces/errors/errors_internal_test.go:21\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\ncause: error\ngithub.com/wspowell/errors.init\n\t/workspaces/errors/errors_internal_test.go:9\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6417\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6394\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:238\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571",
 		},
-		// Root error is golang error.
 		{
-			about:               "cause error is golang error - it prints error as string",
-			errorFunc:           fooB2,
+			about:               "rewrapped cause error - it prints wrapped error as string",
+			errorFunc:           returnCauseWrappedTwice,
 			formatString:        "%s",
-			expectedErrorString: "whoops: this is bad",
+			expectedErrorString: "rewrapped",
 		},
 		{
-			about:               "cause error is golang error - it prints error as value",
-			errorFunc:           fooB2,
+			about:               "rewrapped cause error - it prints wrapped error as value",
+			errorFunc:           returnCauseWrappedTwice,
 			formatString:        "%v",
-			expectedErrorString: "[fooB] whoops: this is bad",
+			expectedErrorString: "rewrapped",
 		},
 		{
-			about:               "cause error is golang error - it prints error as value with internal code stack",
-			errorFunc:           fooB2,
+			about:               "rewrapped cause error - it prints wrapped error as value with wrapped error",
+			errorFunc:           returnCauseWrappedTwice,
 			formatString:        "%#v",
-			expectedErrorString: "[fooB] whoops: this is bad",
+			expectedErrorString: "rewrapped -> wrapped -> cause: error",
 		},
 		{
-			about:               "cause error is golang error - it prints error as value with internal code stack and with stack trace",
-			errorFunc:           fooB2,
+			about:               "rewrapped cause error - it prints wrapped error as value with wrapped error and stack trace",
+			errorFunc:           returnCauseWrappedTwice,
 			formatString:        "%+v",
-			expectedErrorString: "[fooB] whoops: this is bad\n====[fooB]====\ngithub.com/wspowell/errors.fooB2",
+			expectedErrorString: "rewrapped -> wrapped\ngithub.com/wspowell/errors.returnCauseWrappedTwice\n\t/workspaces/errors/errors_internal_test.go:25\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\nwrapped -> cause: error\ngithub.com/wspowell/errors.returnCauseWrapped\n\t/workspaces/errors/errors_internal_test.go:21\ngithub.com/wspowell/errors.returnCauseWrappedTwice\n\t/workspaces/errors/errors_internal_test.go:25\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\ncause: error\ngithub.com/wspowell/errors.init\n\t/workspaces/errors/errors_internal_test.go:9\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6417\nruntime.doInit\n\t/usr/local/go/src/runtime/proc.go:6394\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:238\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571",
+		},
+		// golang errors.
+		{
+			about:               "wrapped golang error - it prints error as string",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%s",
+			expectedErrorString: "wrapped",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%v",
+			expectedErrorString: "wrapped",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value with wrapped error",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%#v",
+			expectedErrorString: "wrapped -> golang: error",
+		},
+		{
+			about:               "wrapped golang error - it prints error as value with wrapped error with stack trace",
+			errorFunc:           returnGolangWrapped,
+			formatString:        "%+v",
+			expectedErrorString: "wrapped -> golang: error\ngithub.com/wspowell/errors.returnGolangWrapped\n\t/workspaces/errors/errors_internal_test.go:34\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\ngolang: error\n(no stack trace available)",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as string",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%s",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%v",
+			expectedErrorString: "rewrapped",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value with wrapped error",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%#v",
+			expectedErrorString: "rewrapped -> wrapped -> golang: error",
+		},
+		{
+			about:               "rewrapped golang error - it prints error as value with wrapped error with stack trace",
+			errorFunc:           returnGolangWrappedTwice,
+			formatString:        "%+v",
+			expectedErrorString: "rewrapped -> wrapped\ngithub.com/wspowell/errors.returnGolangWrappedTwice\n\t/workspaces/errors/errors_internal_test.go:38\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\nwrapped -> golang: error\ngithub.com/wspowell/errors.returnGolangWrapped\n\t/workspaces/errors/errors_internal_test.go:34\ngithub.com/wspowell/errors.returnGolangWrappedTwice\n\t/workspaces/errors/errors_internal_test.go:38\ngithub.com/wspowell/errors.Test_error_Format.func1\n\t/workspaces/errors/errors_debug_internal_test.go:147\ntesting.tRunner\n\t/usr/local/go/src/testing/testing.go:1410\nruntime.goexit\n\t/usr/local/go/src/runtime/asm_amd64.s:1571\n\ngolang: error\n(no stack trace available)",
 		},
 	}
 	for index := range testCases {
@@ -121,12 +149,12 @@ func Test_error_Format(t *testing.T) {
 			actual := fmt.Sprintf(testCase.formatString, err)
 
 			if testCase.formatString == "%+v" {
-				if !strings.HasPrefix(actual, testCase.expectedErrorString) {
-					t.Errorf("expected %s, but got %s", testCase.expectedErrorString, actual)
+				if actual != testCase.expectedErrorString {
+					t.Errorf("expected '%s', but got '%s'", testCase.expectedErrorString, actual)
 				}
 			} else {
 				if actual != testCase.expectedErrorString {
-					t.Errorf("expected %s, but got %s", testCase.expectedErrorString, actual)
+					t.Errorf("expected '%s', but got '%s'", testCase.expectedErrorString, actual)
 				}
 			}
 		})

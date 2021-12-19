@@ -8,40 +8,28 @@ import (
 )
 
 type cause struct {
-	internalCode string
-	format       string
-	values       []interface{}
+	format string
+	values []any
 
-	// Optional. May be present if an error was propagated or converted.
+	// Optional. May be present if an error was wrapped.
 	fromErr error
-	// Optional. May be present if an error was converted.
+	// Optional. May be present if an error was wrapped.
 	toErr error
 }
 
-func newCause(internalCode string, format string, values ...interface{}) *cause {
+func newCause(format string, values ...any) *cause {
 	return &cause{
-		internalCode: internalCode,
-		format:       format,
-		values:       values,
+		format: format,
+		values: values,
 	}
 }
 
-func newCauseWithError(internalCode string, err error) *cause {
+func newCauseWithWrappedError(fromErr error, toErr error) *cause {
 	return &cause{
-		internalCode: internalCode,
-		format:       "%s",
-		values:       []interface{}{err},
-		fromErr:      err,
-	}
-}
-
-func newCauseWithErrorConversion(internalCode string, fromErr error, toErr error) *cause {
-	return &cause{
-		internalCode: internalCode,
-		format:       "%s",
-		values:       []interface{}{toErr},
-		fromErr:      fromErr,
-		toErr:        toErr,
+		format:  "%s",
+		values:  []any{toErr},
+		fromErr: fromErr,
+		toErr:   toErr,
 	}
 }
 
@@ -50,7 +38,7 @@ func (self *cause) Unwrap() error {
 		return self.toErr
 	}
 
-	return self.fromErr
+	return nil
 }
 
 func (self *cause) Error() string {
@@ -60,25 +48,21 @@ func (self *cause) Error() string {
 func (self *cause) Format(state fmt.State, verb rune) {
 	switch verb {
 	case 's':
-		fmt.Fprintf(state, self.format, self.values...)
+		fmt.Fprintf(state, "%s", self.Error())
 	case 'v':
-		fmt.Fprintf(state, "[%s] ", self.internalCode)
 		self.Format(state, 's')
 
-		if self.toErr != nil {
-			// Print the converted errors.
-			if state.Flag('+') {
-				fmt.Fprintf(state, "\n\n")
-			} else if state.Flag('#') {
+		if state.Flag('+') || state.Flag('#') {
+			if self.toErr != nil && self.fromErr != nil {
+				// Print the wrapped error string.
 				fmt.Fprintf(state, " -> ")
-			} else {
-				// Do not print the converted from error.
-				break
-			}
 
-			// nolint:errorlint // reason: type conversion, not an error check.
-			if formatter, ok := self.fromErr.(fmt.Formatter); ok {
-				formatter.Format(state, verb)
+				// nolint:errorlint // reason: type conversion, not an error check.
+				if formatter, ok := self.fromErr.(fmt.Formatter); ok {
+					formatter.Format(state, verb)
+				} else {
+					fmt.Fprintf(state, "%s", self.fromErr)
+				}
 			}
 		}
 	default:

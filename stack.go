@@ -9,6 +9,11 @@ import (
 	"strconv"
 )
 
+const (
+	callersSkipPanic    = 5
+	callersSkipFunction = 4
+)
+
 // Frame represents a program counter inside a stack frame.
 // For historical reasons if Frame is interpreted as a uintptr
 // its value represents the program counter + 1.
@@ -97,4 +102,13 @@ func (s *stack) Format(st fmt.State, verb rune) {
 			}
 		}
 	}
+}
+
+func callers(skip int) *stack {
+	const depth = 32
+	var pcs [depth]uintptr
+	n := runtime.Callers(skip, pcs[:])
+	var st stack = pcs[0:n]
+
+	return &st
 }
