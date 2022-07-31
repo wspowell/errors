@@ -17,6 +17,7 @@ linters:
     - interfacer
     - maligned
     - scopelint
+    - exhaustruct
     - forbidigo
     - gofumpt
     - exhaustivestruct
@@ -28,15 +29,17 @@ linters:
     - goheader
     - godot
     - gocognit
+    - gocritic
     - gocyclo
     - gomnd
+    - ireturn
     - lll
     - funlen
     - nestif
     - wsl
     - cyclop
-    # - goanalysis_metalinter # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
-    # - staticcheck # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
+    #- goanalysis_metalinter # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
+    #- staticcheck # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
   fast: false
 
 severity:
@@ -233,6 +236,13 @@ linters-settings:
     # it's a comma-separated list of prefixes
     local-prefixes: github.com/wspowell/errors
 
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/wspowell/*)
+      - prefix(github.com/wspowell/errors)
+
   gomoddirectives:
     # Allow local `replace` directives. Default is false.
     replace-local: false
@@ -317,15 +327,6 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment
-
-  depguard:
-    list-type: blacklist
-    include-go-root: false
-    packages:
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      # specify an error message to output when a blacklisted package is used
-      - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
 
   ifshort:
     # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax.
@@ -554,11 +555,9 @@ linters-settings:
     list-type: blacklist
     include-go-root: true
     packages:
-      - context
       - errors
       - log
     packages-with-error-message:
       # specify an error message to output when a blacklisted package is used
-      - context: "replace with github.com/wspowell/context"
       - errors: "replace with github.com/wspowell/errors"
       - log: "replace with github.com/wspowell/log"

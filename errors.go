@@ -1,76 +1,71 @@
 package errors
 
 import (
-	// nolint:depguard // reason: import to shadow the package
-	"errors"
+	"context"
+	"fmt"
 )
 
 // New error.
 // This should be called when the application creates a brand new error.
 // If an error has been received from an external function, use Wrap().
-func New(format string, values ...any) error {
-	return newCause(format, values...)
+func New(ctx context.Context, format string, values ...any) Error {
+	return newError(ctx, callersSkipError, false, format, values...)
 }
 
-// Wrap an existing error with a new error.
-// Calls to As(), Is(), InternalCode(), Cause(), and Unwrap() will only refer to the new error.
-// Original error used for formatting/printing only.
-// This should be used when returning errors from an external package. This makes the new error as the cause.
-// This can also be used to return a new discret error so that the caller is not required
-//   to know the underlying implementation. For example, a function may use the io package and therefore handle
-//   io.EOF and other errors, but the function could wrap those in a new error that could be checked by callers.
-func Wrap(fromErr error, toErr error) error {
-	if toErr == nil {
-		return newCauseWithWrappedError(nil, fromErr)
-	}
-	if fromErr == nil {
-		return newCauseWithWrappedError(nil, toErr)
-	}
+// Error keeps the context of the error to print later.
+//
+// Error must be kept comparable.
+type Error struct {
+	// format to print the error string.
+	err string
 
-	return newCauseWithWrappedError(fromErr, toErr)
+	// callStack only when isDebug.
+	callStack *stack
 }
 
-// Is reports whether any error in err's chain matches target.
-// See: https://golang.org/pkg/errors/#Is
-func Is(err, target error) bool {
-	return errors.Is(err, target)
-}
+func newError(ctx context.Context, callersSkipCount int, isPanic bool, format string, values ...any) Error {
+	var callStack *stack
 
-// As finds the first error in err's chain that matches target,
-// and if so, sets target to that error value and returns true.
-// Otherwise, it returns false.
-// See: https://golang.org/pkg/errors/#As
-func As(err error, target any) bool {
-	return errors.As(err, target)
-}
-
-// Unwrap returns the result of calling the Unwrap method on err,
-// if err's type contains an Unwrap method returning error.
-// Otherwise, Unwrap returns nil.
-// See: https://golang.org/pkg/errors/#Unwrap
-func Unwrap(err error) error {
-	// nolint:wrapcheck // reason: passthrough for shadowing errors package
-	return errors.Unwrap(err)
-}
-
-// Cause of the error.
-// This returns the first "cause" error encountered.
-// If there is no "cause" error, then it returns the very first error in the Unwrap() chain.
-func Cause(err error) error {
-	causeErr := &cause{}
-	if errors.As(err, &causeErr) {
-		if causeErr.toErr != nil {
-			return causeErr.toErr
-		}
-		return causeErr
+	if isPanic || shouldPrintStackTrace(ctx) {
+		callStack = callers(callersSkipCount)
 	}
 
-	return findFirstError(err)
+	var err string
+	if len(values) == 0 {
+		// Do not call fmt.Sprintf() if not necessary.
+		// Major performance improvement.
+		err = format
+	} else {
+		err = fmt.Sprintf(format, values...)
+	}
+
+	return Error{
+		err: err,
+		//formatValues: formatValues,
+		callStack: callStack,
+	}
 }
 
-func findFirstError(err error) error {
-	if nextErr := errors.Unwrap(err); nextErr != nil {
-		return findFirstError(nextErr)
+func (self Error) String() string {
+	if self.callStack == nil {
+		// Do not call fmt.Sprintf() if not necessary.
+		// Major performance improvement.
+		return self.err
 	}
-	return err
+
+	return fmt.Sprintf("%s", self)
+}
+
+func (self Error) Format(state fmt.State, verb rune) {
+	fmt.Fprintf(state, self.err)
+
+	if self.callStack != nil {
+		// Print stack trace.
+		fmt.Fprintf(state, "%+v", self.callStack)
+	}
+}
+
+func (self Error) IsNone() bool {
+	// nolint:exhaustruct // reason: zero value for Error is desired
+	return self == Error{}
 }

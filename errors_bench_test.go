@@ -1,79 +1,104 @@
 package errors_test
 
 import (
-
+	"context"
 	// nolint:depguard // reason: importing "errors" for bench comparison
 	goerrors "errors"
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/wspowell/errors"
 )
 
-var errWrapped = errors.New("wrapped")
+// nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
+var (
+	errGLOBAL    error
+	errorGLOBAL  errors.Error
+	outputGLOBAL string
+)
 
-func Benchmark_errors_New(b *testing.B) {
-	var err error
+func BenchmarkErrorsNew(b *testing.B) {
+	ctx := context.Background()
+	var err errors.Error
 	for i := 0; i < b.N; i++ {
-		// nolint:errcheck // reason: error created for test
-		err = errors.New("code", "test")
+		err = errors.New(ctx, "test")
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	fmt.Fprintf(io.Discard, "%s", err)
+	errorGLOBAL = err
 }
 
-func Benchmark_goerrors_New(b *testing.B) {
+func BenchmarkErrorsWithStackTrace(b *testing.B) {
+	ctx := errors.WithStackTrace(context.Background())
+	var err errors.Error
+	for i := 0; i < b.N; i++ {
+		err = errors.New(ctx, "%s", "test")
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = err
+}
+
+func BenchmarkErrorsNewFmt(b *testing.B) {
+	ctx := context.Background()
+	var err errors.Error
+	for i := 0; i < b.N; i++ {
+		err = errors.New(ctx, "%s", "test")
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = err
+}
+
+func BenchmarkGoerrorsNew(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
-		// nolint:errcheck,goerr113,govet // reason: error created for test
+		// nolint:goerr113 // reason: error created for test
 		err = goerrors.New("test")
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	fmt.Fprintf(io.Discard, "%s", err)
+	errGLOBAL = err
 }
 
-func Benchmark_goerrors_Wrap(b *testing.B) {
+func BenchmarkGoerrorsWrap(b *testing.B) {
 	// nolint:goerr113 // reason: error created for test
-	e := goerrors.New("test")
-	var err error
+	err := goerrors.New("test")
 	for i := 0; i < b.N; i++ {
-		// nolint:govet // reason: error created for test
-		err = fmt.Errorf("%w", e)
+		err = fmt.Errorf("%w", err)
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	fmt.Fprintf(io.Discard, "%s", err)
+	errGLOBAL = err
 }
 
-func Benchmark_errors_Wrap_cause(b *testing.B) {
-	e := errors.New("code", "test")
-	var err error
+func BenchmarkErrorString(b *testing.B) {
+	ctx := context.Background()
+	err := errors.New(ctx, "test")
+	var output string
 	for i := 0; i < b.N; i++ {
-		// nolint:errcheck // reason: error created for test
-		err = errors.Wrap(e, errWrapped)
+		output = err.String()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	fmt.Fprintf(io.Discard, "%s", err)
+	outputGLOBAL = output
 }
 
-func Benchmark_errors_Wrap_goerror(b *testing.B) {
-	// nolint:goerr113 // reason: error created for test
-	e := goerrors.New("test")
-	var err error
+func BenchmarkErrorStringWithStackTrace(b *testing.B) {
+	ctx := errors.WithStackTrace(context.Background())
+	err := errors.New(ctx, "test")
+	var output string
 	for i := 0; i < b.N; i++ {
-		// nolint:errcheck // reason: error created for test
-		err = errors.Wrap(e, errWrapped)
+		output = err.String()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	fmt.Fprintf(io.Discard, "%s", err)
+	outputGLOBAL = output
 }

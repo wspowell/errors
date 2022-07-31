@@ -1,30 +1,26 @@
 package errors
 
-import (
-	"fmt"
-)
+import "context"
 
-var (
-	ErrPanic = New("recovered panic")
-)
-
-func Recover(errPanic any) error {
+func Recover(ctx context.Context, errPanic any) Error {
 	if errPanic != nil {
-		// nolint:wrapcheck // reason: passthrough for handling panic error
-		return fmt.Errorf("%w: %v%+v", ErrPanic, errPanic, callers(callersSkipPanic))
+		return newError(ctx, callersSkipPanic, true, "recovered panic: %s", errPanic)
 	}
 
-	return nil
+	// nolint:exhaustruct // reason: zero value for Error is desired
+	return Error{}
 }
 
 // Catch potential panics that occur in a function call.
 // Panics should never occur, therefore stack traces print regardless of build mode (release or debug).
-func Catch(fn func()) (err error) {
-	defer func() {
-		err = Recover(recover())
-	}()
+// nolint:nonamedreturns // reason: need named return to alter the Error return in the defer
+func Catch(ctx context.Context, fn func(ctx context.Context)) (err Error) {
+	defer func(ctx context.Context) {
+		err = Recover(ctx, recover())
+	}(ctx)
 
-	fn()
+	fn(ctx)
 
-	return nil
+	// nolint:exhaustruct // reason: zero value for Error is desired
+	return Error{}
 }

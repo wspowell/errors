@@ -3,24 +3,21 @@
 {
 	"name": "Go",
 	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			// Update the VARIANT arg to pick a version of Go: 1, 1.16, 1.15
-			"VARIANT": "1.17",
-			// Options
-			"INSTALL_NODE": "false",
-			"NODE_VERSION": "lts/*"
-		}
+		"dockerfile": "Dockerfile"
 	},
 	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash",
+		"terminal.integrated.defaultProfile.linux": "bash",
 		"go.toolsManagement.checkForUpdates": "off",
 		"go.useLanguageServer": true,
 		"go.gopath": "/go",
-		"go.goroot": "/usr/local/go"
+		"go.goroot": "/usr/local/go",
+		"go.lintTool": "golangci-lint",
+		"errorLens.exclude": [".*: Unknown word\\."],
+		"cSpell.checkOnlyEnabledFileTypes": true,
+		"cSpell.enableFiletypes": ["go"]
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
@@ -29,8 +26,9 @@
 		"eamodio.gitlens",
 		"mutantdino.resourcemonitor",
 		"wayou.vscode-todo-highlight",
-		"streetsidesoftware.code-spell-checker"
-	],
+		"streetsidesoftware.code-spell-checker",
+		"usernamehw.errorlens"
+	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
