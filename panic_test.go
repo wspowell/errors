@@ -24,7 +24,7 @@ func doThing(ctx context.Context) {
 }
 
 //nolint:nonamedreturns // reason: need named return to alter the Error return in the defer
-func recoverPanicAsError() (err errors.Error) {
+func recoverPanicAsError() (err errors.Error[string]) {
 	defer func() {
 		err = errors.Recover(context.Background(), recover())
 	}()
@@ -32,7 +32,7 @@ func recoverPanicAsError() (err errors.Error) {
 	panic("WHOOPS")
 }
 
-func doThingAgain() errors.Error {
+func doThingAgain() errors.Error[string] {
 	return recoverPanicAsError()
 }
 

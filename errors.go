@@ -6,9 +6,9 @@ import (
 	"io"
 )
 
-const None = ""
-
-var ErrNone = Error{err: None}
+func None[T ~string]() Error[T] {
+	return Error[T]{err: ""}
+}
 
 // New error instance.
 //
@@ -16,15 +16,15 @@ var ErrNone = Error{err: None}
 // This new Error is not (intended to be) comparable with other Errors and therefore cannot be
 // used as a sentinel error. A Sentinel may be used and compared using Error.Sentinel().
 // A context is accepted in order to pass through API level feature flags.
-func New[T ~string](ctx context.Context, format T, values ...any) Error {
-	return newError(ctx, callersSkipError, string(format), values...)
+func New[T ~string](ctx context.Context, format T, values ...any) Error[T] {
+	return newError(ctx, callersSkipError, format, values...)
 }
 
 // Error is an instance of a sentinel error. If the error was created via New() then the error is
 // considered and inline error and is not comparable with another Error.
 //
 // Error should not be used with "==". Instead, use Error.As().
-type Error struct {
+type Error[T ~string] struct {
 	// format to print the error string.
 	err string
 
@@ -32,12 +32,15 @@ type Error struct {
 	callStack *stack
 }
 
-func newError(ctx context.Context, callersSkipCount int, err string, values ...any) Error {
+func newError[T ~string](ctx context.Context, callersSkipCount int, format T, values ...any) Error[T] {
+	var err string
 	if len(values) != 0 {
 		// Do not call fmt.Sprintf() if not necessary.
 		// Major performance improvement.
 		// Only necessary if there are any values.
-		err = fmt.Sprintf(err, values...)
+		err = fmt.Sprintf(string(format), values...)
+	} else {
+		err = string(format)
 	}
 
 	var callStack *stack
@@ -45,18 +48,18 @@ func newError(ctx context.Context, callersSkipCount int, err string, values ...a
 		callStack = callers(callersSkipCount)
 	}
 
-	return Error{
+	return Error[T]{
 		err:       err,
 		callStack: callStack,
 	}
 }
 
 // Error string, ignoring any call stack.
-func (self Error) Error() string {
+func (self Error[T]) Error() string {
 	return self.err
 }
 
-func (self Error) Format(state fmt.State, verb rune) {
+func (self Error[T]) Format(state fmt.State, verb rune) {
 	if _, err := io.WriteString(state, self.err); err != nil {
 		fmt.Fprint(state, "<failed formatting error>")
 	}
@@ -69,16 +72,15 @@ func (self Error) Format(state fmt.State, verb rune) {
 // IsNone returns true if the Error is zero value.
 //
 // It is recommended to use Error along with Result and instead use Result.IsOk().
-func (self Error) IsNone() bool {
-	switch As[string](self) {
-	case None:
-		return true
-	default:
-		return false
-	}
+func (self Error[T]) IsNone() bool {
+	return self.err == ""
 }
 
-// As the sentinel type for the error.
+func (self Error[T]) IsSome() bool {
+	return !self.IsNone()
+}
+
+// Into the sentinel type for the error.
 //
 // This allows Error to be used in a switch in conjunction with linter "exhaustive".
 //
@@ -110,13 +112,13 @@ func (self Error) IsNone() bool {
 //
 //    err := multipleErrors(context.Background(), 1)
 //    //nolint:exhaustive // reason: expected lint error for testing
-//    switch errors.As[myError](err) {
+//    switch err.Into() {
 //    case errOne:
 //      // Expected case.
 //    default:
 //      assert.Fail(t, "expected errOne")
 //    }
 //  }
-func As[T ~string](err Error) T {
-	return T(err.err)
+func (self Error[T]) Into() T {
+	return T(self.err)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/wspowell/errors/result"
 )
 
-type Error = errors.Error
+type Error = errors.Error[string]
 
 //nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
 var (

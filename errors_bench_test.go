@@ -13,20 +13,20 @@ import (
 //nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
 var (
 	errGLOBAL    error
-	errorGLOBAL  errors.Error
+	errorGLOBAL  errors.Error[string]
 	outputGLOBAL string
 )
 
 const errSentinel = "test"
 const errSentinelFmt = "%s"
 
-func errorFn(ctx context.Context) errors.Error {
+func errorFn(ctx context.Context) errors.Error[string] {
 	return errors.New(ctx, errSentinel)
 }
 
 func BenchmarkErrorsSentinelNew(b *testing.B) {
 	ctx := context.Background()
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errors.New(ctx, errSentinel)
 	}
@@ -38,7 +38,7 @@ func BenchmarkErrorsSentinelNew(b *testing.B) {
 
 func BenchmarkErrorsSentinelNewFn(b *testing.B) {
 	ctx := context.Background()
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errorFn(ctx)
 	}
@@ -50,7 +50,7 @@ func BenchmarkErrorsSentinelNewFn(b *testing.B) {
 
 func BenchmarkErrorsSentinelNewValues(b *testing.B) {
 	ctx := context.Background()
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errors.New(ctx, errSentinelFmt, "test")
 	}
@@ -62,7 +62,7 @@ func BenchmarkErrorsSentinelNewValues(b *testing.B) {
 
 func BenchmarkErrorsNew(b *testing.B) {
 	ctx := context.Background()
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errors.New(ctx, "test")
 	}
@@ -74,7 +74,7 @@ func BenchmarkErrorsNew(b *testing.B) {
 
 func BenchmarkErrorsWithStackTrace(b *testing.B) {
 	ctx := errors.WithStackTrace(context.Background())
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errors.New(ctx, "test")
 	}
@@ -86,7 +86,7 @@ func BenchmarkErrorsWithStackTrace(b *testing.B) {
 
 func BenchmarkErrorsNewValues(b *testing.B) {
 	ctx := context.Background()
-	var err errors.Error
+	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
 		err = errors.New(ctx, "%s", "test")
 	}

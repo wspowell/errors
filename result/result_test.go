@@ -23,7 +23,7 @@ func TestOk(t *testing.T) {
 
 	val, err := res.Result()
 	assert.Equal(t, value, val)
-	assert.Equal(t, errors.Error{}, err)
+	assert.Equal(t, errors.None[string](), err)
 
 	assert.True(t, res.IsOk())
 	assert.Equal(t, 1, res.Value())
@@ -38,13 +38,13 @@ func TestErr(t *testing.T) {
 
 	val, err := res.Result()
 	assert.Equal(t, 0, val)
-	assert.Equal(t, errErrorFailure, errors.As[string](err))
+	assert.Equal(t, errErrorFailure, err.Into())
 
 	assert.False(t, res.IsOk())
 	assert.Equal(t, 0, res.Value())
 	assert.Equal(t, 0, res.ValueOr(0))
 	assert.Panics(t, func() { res.ValueOrPanic() })
-	assert.Equal(t, errErrorFailure, errors.As[string](res.Error()))
+	assert.Equal(t, errErrorFailure, res.Error().Into())
 }
 
 func TestErrPanicsWithError(t *testing.T) {
@@ -55,7 +55,7 @@ func TestErrPanicsWithError(t *testing.T) {
 	defer func() {
 		if err := errors.Recover(context.Background(), recover()); err.IsNone() {
 			t.Error("Result should panic")
-		} else if errors.As[string](res.Error()) != errErrorFailure {
+		} else if res.Error().Into() != errErrorFailure {
 			t.Error("Result should panic with the error")
 		}
 	}()
@@ -156,6 +156,6 @@ func TestResultErrPassingThroughChannel(t *testing.T) {
 	close(resultChannel)
 
 	for res := range resultChannel {
-		assert.Equal(t, errErrorFailure, errors.As[string](res.Error()))
+		assert.Equal(t, errErrorFailure, res.Error().Into())
 	}
 }

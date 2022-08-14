@@ -70,5 +70,5 @@ func TestWhenThenErr(t *testing.T) {
 
 	assert.False(t, res2.IsOk())
 	assert.Equal(t, float64(0), res2.ValueOr(0))
-	assert.Equal(t, errErrorFailure, errors.As[string](res.Error()))
+	assert.Equal(t, errErrorFailure, res.Error().Into())
 }

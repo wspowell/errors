@@ -14,15 +14,14 @@ const (
 	errExpected = "WHOOPS"
 )
 
-func errFunc(ctx context.Context) errors.Error {
+func errFunc(ctx context.Context) errors.Error[string] {
 	return errors.New(ctx, errExpected)
 }
 
 func TestNone(t *testing.T) {
 	t.Parallel()
 
-	assert.True(t, errors.ErrNone.IsNone())
-	assert.True(t, errors.ErrNone.IsNone())
+	assert.True(t, errors.None[string]().IsNone())
 	assert.True(t, errors.New(context.Background(), "").IsNone())
 	assert.False(t, errors.New(context.Background(), errExpected).IsNone())
 }
@@ -34,7 +33,7 @@ func TestNew(t *testing.T) {
 	err := errFunc(ctx)
 
 	assert.Equal(t, err.Error(), "WHOOPS")
-	assert.Equal(t, errExpected, errors.As[string](err))
+	assert.Equal(t, errExpected, err.Into())
 }
 
 func TestNewWithStackTrace(t *testing.T) {
@@ -46,7 +45,7 @@ func TestNewWithStackTrace(t *testing.T) {
 	stackTraceFragment := "WHOOPS\ngithub.com/wspowell/errors_test.errFunc"
 	assert.Equal(t, err.Error(), "WHOOPS")
 	assert.Contains(t, fmt.Sprintf("%+v", err), stackTraceFragment)
-	assert.Equal(t, errExpected, errors.As[string](err))
+	assert.Equal(t, errExpected, err.Into())
 }
 
 type myError string
@@ -57,7 +56,7 @@ const (
 	errThree = myError("three")
 )
 
-func multipleErrors(ctx context.Context, err int) errors.Error {
+func multipleErrors(ctx context.Context, err int) errors.Error[myError] {
 	switch err {
 	case 1:
 		return errors.New(ctx, errOne)
@@ -66,7 +65,7 @@ func multipleErrors(ctx context.Context, err int) errors.Error {
 	case 3:
 		return errors.New(ctx, errThree)
 	default:
-		return errors.ErrNone
+		return errors.None[myError]()
 	}
 }
 
@@ -75,7 +74,7 @@ func TestSentinelEnum(t *testing.T) {
 
 	err := multipleErrors(context.Background(), 1)
 	//nolint:exhaustive // reason: expected lint error for testing
-	switch errors.As[myError](err) {
+	switch err.Into() {
 	case errOne:
 		// Expected case.
 	default:
