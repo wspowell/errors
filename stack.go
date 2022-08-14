@@ -73,17 +73,17 @@ func (f frame) Format(state fmt.State, verb rune) {
 	case 's':
 		switch {
 		case state.Flag('+'):
-			io.WriteString(state, f.name()) // nolint:errcheck // reason: no real action to take
-			io.WriteString(state, "\n\t")   // nolint:errcheck // reason: no real action to take
-			io.WriteString(state, f.file()) // nolint:errcheck // reason: no real action to take
+			io.WriteString(state, f.name()) //nolint:errcheck // reason: no real action to take
+			io.WriteString(state, "\n\t")   //nolint:errcheck // reason: no real action to take
+			io.WriteString(state, f.file()) //nolint:errcheck // reason: no real action to take
 		default:
-			io.WriteString(state, path.Base(f.file())) // nolint:errcheck // reason: no real action to take
+			io.WriteString(state, path.Base(f.file())) //nolint:errcheck // reason: no real action to take
 		}
 	case 'd':
-		io.WriteString(state, strconv.Itoa(f.line())) // nolint:errcheck // reason: no real action to take
+		io.WriteString(state, strconv.Itoa(f.line())) //nolint:errcheck // reason: no real action to take
 	case 'v':
 		f.Format(state, 's')
-		io.WriteString(state, ":") // nolint:errcheck // reason: no real action to take
+		io.WriteString(state, ":") //nolint:errcheck // reason: no real action to take
 		f.Format(state, 'd')
 	}
 }

@@ -2,6 +2,7 @@ package errors_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func doThing(ctx context.Context) {
 	panicFunction()
 }
 
-// nolint:nonamedreturns // reason: need named return to alter the Error return in the defer
+//nolint:nonamedreturns // reason: need named return to alter the Error return in the defer
 func recoverPanicAsError() (err errors.Error) {
 	defer func() {
 		err = errors.Recover(context.Background(), recover())
@@ -48,7 +49,7 @@ func TestCatchClosure(t *testing.T) {
 		panicFunction()
 	})
 
-	assert.Contains(t, err.String(), expectedCatchStackTrace)
+	assert.Contains(t, fmt.Sprintf("%+v", err), expectedCatchStackTrace)
 }
 
 func TestCatchFunction(t *testing.T) {
@@ -62,7 +63,7 @@ func TestCatchFunction(t *testing.T) {
 
 	err := errors.Catch(context.Background(), doThing)
 
-	assert.Contains(t, err.String(), expectedCatchStackTrace)
+	assert.Contains(t, fmt.Sprintf("%+v", err), expectedCatchStackTrace)
 }
 
 func TestRecoverSameFunction(t *testing.T) {
@@ -76,7 +77,7 @@ func TestRecoverSameFunction(t *testing.T) {
 
 	err := recoverPanicAsError()
 	assert.NotNil(t, err)
-	assert.Contains(t, err.String(), expectedRecoverStackTrace)
+	assert.Contains(t, fmt.Sprintf("%+v", err), expectedRecoverStackTrace)
 }
 
 func TestRecoverNested(t *testing.T) {
@@ -89,7 +90,7 @@ func TestRecoverNested(t *testing.T) {
 	}()
 
 	err := doThingAgain()
-	assert.Contains(t, err.String(), expectedRecoverStackTrace)
+	assert.Contains(t, fmt.Sprintf("%+v", err), expectedRecoverStackTrace)
 }
 
 func TestRecoverNone(t *testing.T) {
@@ -97,7 +98,7 @@ func TestRecoverNone(t *testing.T) {
 
 	err := errors.Recover(context.Background(), nil)
 
-	if (err != errors.Error{}) {
+	if !err.IsNone() {
 		t.Error("expected error to be None")
 	}
 

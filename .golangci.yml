@@ -13,6 +13,7 @@ run:
 linters:
   enable-all: true
   disable:
+    - cyclop
     - golint
     - interfacer
     - maligned
@@ -37,7 +38,6 @@ linters:
     - funlen
     - nestif
     - wsl
-    - cyclop
     #- goanalysis_metalinter # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
     #- staticcheck # FIXME: staticcheck does not yet work with generics. See: https://issueexplorer.com/issue/dominikh/go-tools/1107
   fast: false
@@ -85,16 +85,20 @@ linters-settings:
     comparison: true
 
   exhaustive:
-    # check switch statements in generated files also
-    check-generated: false
-    # presence of "default" case in switch statements satisfies exhaustiveness,
-    # even if all enum members are not listed
+    # Check switch statements in generated files also.
+    # Default: false
+    check-generated: true
+    # Presence of "default" case in switch statements satisfies exhaustiveness,
+    # even if all enum members are not listed.
+    # Default: false
     default-signifies-exhaustive: false
-    # enum members matching the supplied regex do not have to be listed in
-    # switch statements to satisfy exhaustiveness
+    # Enum members matching the supplied regex do not have to be listed in
+    # switch statements to satisfy exhaustiveness.
+    # Default: ""
     ignore-enum-members: ""
-    # consider enums only in package scopes, not in inner scopes
-    package-scope-only: false
+    # Consider enums only in package scopes, not in inner scopes.
+    # Default: false
+    package-scope-only: true
 
   goconst:
     # minimal length of string constant, 3 by default
