@@ -1,5 +1,7 @@
 package result
 
+import "fmt"
+
 type Optional interface {
 	IsNone() bool
 }
@@ -74,5 +76,5 @@ func (self Result[T, E]) ValueOrPanic() T {
 		return self.value
 	}
 
-	panic(self.err)
+	panic(fmt.Sprintf("%+v", self.err))
 }
