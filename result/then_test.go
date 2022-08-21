@@ -1,7 +1,6 @@
 package result_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,13 +12,11 @@ import (
 func TestThenOk(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	value := 1
-	res := result.Ok[int, Error](value)
+	res := result.Ok[int, errors.Error[string]](value)
 
-	res2 := result.Then(ctx, res, func(ctx context.Context, v int) result.Result[int, Error] {
-		return result.Ok[int, Error](v + 1)
+	res2 := result.Then(res, func(v int) result.Result[int, errors.Error[string]] {
+		return result.Ok[int, errors.Error[string]](v + 1)
 	})
 
 	assert.True(t, res2.IsOk())
@@ -29,12 +26,10 @@ func TestThenOk(t *testing.T) {
 func TestThenErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	res := result.Err[int](errors.Some(errErrorFailure))
 
-	res := result.Err[int](errors.New(context.Background(), errErrorFailure))
-
-	res2 := result.Then(ctx, res, func(ctx context.Context, v int) result.Result[int, Error] {
-		return result.Ok[int, Error](v + 1)
+	res2 := result.Then(res, func(v int) result.Result[int, errors.Error[string]] {
+		return result.Ok[int, errors.Error[string]](v + 1)
 	})
 
 	assert.False(t, res2.IsOk())
@@ -44,13 +39,11 @@ func TestThenErr(t *testing.T) {
 func TestWhenThenOk(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	value := 1
-	res := result.Ok[int, Error](value)
+	res := result.Ok[int, errors.Error[string]](value)
 
-	res2 := result.When[int, float64, Error](res).Then(ctx, func(ctx context.Context, v int) result.Result[float64, Error] {
-		return result.Ok[float64, Error](float64(v + 1.0))
+	res2 := result.When[int, float64, errors.Error[string]](res).Then(func(v int) result.Result[float64, errors.Error[string]] {
+		return result.Ok[float64, errors.Error[string]](float64(v + 1.0))
 	})
 
 	assert.True(t, res2.IsOk())
@@ -60,12 +53,10 @@ func TestWhenThenOk(t *testing.T) {
 func TestWhenThenErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	res := result.Err[int](errors.Some(errErrorFailure))
 
-	res := result.Err[int](errors.New(context.Background(), errErrorFailure))
-
-	res2 := result.When[int, float64, Error](res).Then(ctx, func(ctx context.Context, v int) result.Result[float64, Error] {
-		return result.Ok[float64, Error](float64(v + 1.0))
+	res2 := result.When[int, float64, errors.Error[string]](res).Then(func(v int) result.Result[float64, errors.Error[string]] {
+		return result.Ok[float64, errors.Error[string]](float64(v + 1.0))
 	})
 
 	assert.False(t, res2.IsOk())

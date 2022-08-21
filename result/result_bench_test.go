@@ -1,7 +1,7 @@
 package result_test
 
 import (
-	"context"
+
 	//nolint:depguard // reason: importing "errors" for test comparison
 	goerrors "errors"
 	"testing"
@@ -10,22 +10,61 @@ import (
 	"github.com/wspowell/errors/result"
 )
 
-type Error = errors.Error[string]
-
 //nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
 var (
 	resGLOBAL   int
 	errGLOBAL   error
-	errorGLOBAL Error
+	errorGLOBAL errors.Error[string]
 )
 
-func resultOkInt() result.Result[int, Error] {
-	return result.Ok[int, Error](1)
+func resultOkInt() result.Result[int, errors.Error[string]] {
+	return result.Ok[int, errors.Error[string]](1)
 }
 
-func BenchmarkResultOkInt(b *testing.B) {
+func errorOkInt() (int, error) {
+	return 1, nil
+}
+
+func resultErrInt() result.Result[int, errors.Error[string]] {
+	return result.Err[int](errors.Some(errErrorFailure))
+}
+
+func errorErrInt() (int, error) {
+	//nolint:goerr113 // reason: wrapping is not the focus of this comparison.
+	return 0, goerrors.New("failure")
+}
+
+func BenchmarkResultOk(b *testing.B) {
+	var res result.Result[int, errors.Error[string]]
+
+	for i := 0; i < b.N; i++ {
+		for k := 0; k < 10000; k++ {
+			res = resultOkInt()
+		}
+	}
+
+	b.StopTimer()
+
+	resGLOBAL, errorGLOBAL = res.Result()
+}
+
+func BenchmarkResultErr(b *testing.B) {
+	var res result.Result[int, errors.Error[string]]
+
+	for i := 0; i < b.N; i++ {
+		for k := 0; k < 10000; k++ {
+			res = resultErrInt()
+		}
+	}
+
+	b.StopTimer()
+
+	resGLOBAL, errorGLOBAL = res.Result()
+}
+
+func BenchmarkOkResult(b *testing.B) {
 	var res int
-	var err Error
+	var err errors.Error[string]
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -39,48 +78,7 @@ func BenchmarkResultOkInt(b *testing.B) {
 	errorGLOBAL = err
 }
 
-func resultErrInt(ctx context.Context) result.Result[int, Error] {
-	return result.Err[int](errors.New(ctx, errErrorFailure))
-}
-
-func BenchmarkResultErrIntResult(b *testing.B) {
-	var res int
-	var err Error
-
-	ctx := context.Background()
-
-	for i := 0; i < b.N; i++ {
-		for k := 0; k < 10000; k++ {
-			res, err = resultErrInt(ctx).Result()
-		}
-	}
-
-	b.StopTimer()
-
-	resGLOBAL = res
-	errorGLOBAL = err
-}
-func BenchmarkResultErrInt(b *testing.B) {
-	var res result.Result[int, Error]
-
-	ctx := context.Background()
-
-	for i := 0; i < b.N; i++ {
-		for k := 0; k < 10000; k++ {
-			res = resultErrInt(ctx)
-		}
-	}
-
-	b.StopTimer()
-
-	resGLOBAL, errorGLOBAL = res.Result()
-}
-
-func errorOkInt() (int, error) {
-	return 1, nil
-}
-
-func BenchmarkGoerrorOkInt(b *testing.B) {
+func BenchmarkGoerrorOk(b *testing.B) {
 	var res int
 	var err error
 
@@ -96,12 +94,23 @@ func BenchmarkGoerrorOkInt(b *testing.B) {
 	errGLOBAL = err
 }
 
-func errorErrInt() (int, error) {
-	//nolint:goerr113 // reason: wrapping is not the focus of this comparison.
-	return 0, goerrors.New("failure")
+func BenchmarkErrResult(b *testing.B) {
+	var res int
+	var err errors.Error[string]
+
+	for i := 0; i < b.N; i++ {
+		for k := 0; k < 10000; k++ {
+			res, err = resultErrInt().Result()
+		}
+	}
+
+	b.StopTimer()
+
+	resGLOBAL = res
+	errorGLOBAL = err
 }
 
-func BenchmarkGoerrorErrInt(b *testing.B) {
+func BenchmarkGoerrorErr(b *testing.B) {
 	var res int
 	var err error
 

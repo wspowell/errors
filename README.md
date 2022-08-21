@@ -12,25 +12,28 @@ go test -bench=. -benchmem -count=1 -parallel 8 ./...
 goos: linux
 goarch: amd64
 pkg: github.com/wspowell/errors
-cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-BenchmarkErrorsNew-8                    301735152                3.890 ns/op           0 B/op          0 allocs/op
-BenchmarkErrorsWithStackTrace-8          1283198               929.4 ns/op           284 B/op          3 allocs/op
-BenchmarkErrorsNewFmt-8                 16286179                69.42 ns/op            4 B/op          1 allocs/op
-BenchmarkGoerrorsNew-8                  46670034                25.19 ns/op           16 B/op          1 allocs/op
-BenchmarkGoerrorsWrap-8                  6644190               169.2 ns/op            36 B/op          2 allocs/op
-BenchmarkErrorString-8                  1000000000               0.7221 ns/op          0 B/op          0 allocs/op
-BenchmarkErrorStringWithStackTrace-8      416150              3012 ns/op             400 B/op          9 allocs/op
+cpu: Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
+BenchmarkErr-12                 686074262                1.676 ns/op           0 B/op          0 allocs/op
+BenchmarkGoerrorsNew-12         44342046                26.80 ns/op           16 B/op          1 allocs/op
+BenchmarkErrFunc-12             655313150                1.772 ns/op           0 B/op          0 allocs/op
+BenchmarkGoerrorsFunc-12        42196820                26.93 ns/op           16 B/op          1 allocs/op
+BenchmarkErrFormat-12           23672893                49.89 ns/op            4 B/op          1 allocs/op
+BenchmarkGoerrorsFormat-12      15810512                75.96 ns/op           20 B/op          2 allocs/op
+BenchmarkErrorInto-12           1000000000               1.105 ns/op           0 B/op          0 allocs/op
+BenchmarkGoerrorsWrap-12         7936600               166.1 ns/op            36 B/op          2 allocs/op
 PASS
-ok      github.com/wspowell/errors      11.682s
+ok      github.com/wspowell/errors      11.275s
 
 goos: linux
 goarch: amd64
 pkg: github.com/wspowell/errors/result
-cpu: AMD Ryzen 9 4900HS with Radeon Graphics         
-BenchmarkResultOkInt-8            328060              3646 ns/op               0 B/op          0 allocs/op
-BenchmarkResultErrInt-8           326503              3643 ns/op               0 B/op          0 allocs/op
-BenchmarkGoerrorOkInt-8           244785              4864 ns/op               0 B/op          0 allocs/op
-BenchmarkGoerrorErrInt-8          501597              2488 ns/op               0 B/op          0 allocs/op
+cpu: Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
+BenchmarkResultOk-12              100574             11109 ns/op               0 B/op          0 allocs/op
+BenchmarkResultErr-12              47370             24312 ns/op               0 B/op          0 allocs/op
+BenchmarkOkResult-12               59538             20152 ns/op               0 B/op          0 allocs/op
+BenchmarkGoerrorOk-12             352614              3323 ns/op               0 B/op          0 allocs/op
+BenchmarkErrResult-12              37786             31357 ns/op               0 B/op          0 allocs/op
+BenchmarkGoerrorErr-12              4060            274782 ns/op          160000 B/op      10000 allocs/op
 PASS
-ok      github.com/wspowell/errors/result       4.987s
+ok      github.com/wspowell/errors/result       7.918s
 ```

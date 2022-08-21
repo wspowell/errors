@@ -1,7 +1,6 @@
 package result_test
 
 import (
-	"context"
 	"sync"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestOk(t *testing.T) {
 	t.Parallel()
 
 	value := 1
-	res := result.Ok[int, Error](value)
+	res := result.Ok[int, errors.Error[string]](value)
 
 	val, err := res.Result()
 	assert.Equal(t, value, val)
@@ -34,7 +33,7 @@ func TestOk(t *testing.T) {
 func TestErr(t *testing.T) {
 	t.Parallel()
 
-	res := result.Err[int](errors.New(context.Background(), errErrorFailure))
+	res := result.Err[int](errors.Some(errErrorFailure))
 
 	val, err := res.Result()
 	assert.Equal(t, 0, val)
@@ -47,27 +46,11 @@ func TestErr(t *testing.T) {
 	assert.Equal(t, errErrorFailure, res.Error().Into())
 }
 
-func TestErrPanicsWithError(t *testing.T) {
-	t.Parallel()
-
-	res := result.Err[struct{}](errors.New(context.Background(), errErrorFailure))
-
-	defer func() {
-		if err := errors.Recover(context.Background(), recover()); err.IsNone() {
-			t.Error("Result should panic")
-		} else if res.Error().Into() != errErrorFailure {
-			t.Error("Result should panic with the error")
-		}
-	}()
-
-	res.ValueOrPanic()
-}
-
 func TestResultIntPointer(t *testing.T) {
 	t.Parallel()
 
 	value := 1
-	res := result.Ok[*int, Error](&value)
+	res := result.Ok[*int, errors.Error[string]](&value)
 
 	expected := 1
 	assert.True(t, res.IsOk())
@@ -84,7 +67,7 @@ func TestResultStruct(t *testing.T) {
 		B string
 	}
 	s := S{A: 1, B: "b"}
-	res := result.Ok[S, Error](s)
+	res := result.Ok[S, errors.Error[string]](s)
 
 	assert.True(t, res.IsOk())
 	assert.Equal(t, S{1, "b"}, res.Value())
@@ -100,7 +83,7 @@ func TestResultStructPointer(t *testing.T) {
 		B string
 	}
 	s := &S{A: 1, B: "b"}
-	res := result.Ok[*S, Error](s)
+	res := result.Ok[*S, errors.Error[string]](s)
 
 	assert.True(t, res.IsOk())
 	assert.Equal(t, &S{1, "b"}, res.Value())
@@ -116,12 +99,12 @@ func TestResultOkPassingThroughChannel(t *testing.T) {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(testCases))
 
-	resultChannel := make(chan result.Result[int, Error], len(testCases))
+	resultChannel := make(chan result.Result[int, errors.Error[string]], len(testCases))
 
 	for _, testCase := range testCases {
 		go func(testCase int) {
 			defer waitGroup.Done()
-			r := result.Ok[int, Error](testCase * 2)
+			r := result.Ok[int, errors.Error[string]](testCase * 2)
 			resultChannel <- r
 		}(testCase)
 	}
@@ -142,12 +125,12 @@ func TestResultErrPassingThroughChannel(t *testing.T) {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(testCases))
 
-	resultChannel := make(chan result.Result[int, Error], len(testCases))
+	resultChannel := make(chan result.Result[int, errors.Error[string]], len(testCases))
 
 	for _, testCase := range testCases {
 		go func(_ int) {
 			defer waitGroup.Done()
-			r := result.Err[int](errors.New(context.Background(), errErrorFailure))
+			r := result.Err[int](errors.Some(errErrorFailure))
 			resultChannel <- r
 		}(testCase)
 	}

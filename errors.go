@@ -1,38 +1,20 @@
 package errors
 
 import (
-	"context"
 	"fmt"
-	"io"
 )
 
-func None[T ~string]() Error[T] {
-	return Error[T]{err: ""}
-}
-
-// New error instance.
+// Error defined as a message of type string whose actual error
+// type is type T. T is a type whose underlying type is string.
 //
-// This should be called when the application creates a new error.
-// This new Error is not (intended to be) comparable with other Errors and therefore cannot be
-// used as a sentinel error. A Sentinel may be used and compared using Error.Sentinel().
-// A context is accepted in order to pass through API level feature flags.
-func New[T ~string](ctx context.Context, format T, values ...any) Error[T] {
-	return newError(ctx, callersSkipError, format, values...)
-}
+// Errors may be generic as Error[string] or may have an explicit
+// type. Usually, this is an enum type that allows Error[T] to
+// be self documenting and is used in conjunction with Into() and
+// the "exhaustive" linter.
+type Error[T ~string] string
 
-// Error is an instance of a sentinel error. If the error was created via New() then the error is
-// considered and inline error and is not comparable with another Error.
-//
-// Error should not be used with "==". Instead, use Error.As().
-type Error[T ~string] struct {
-	// format to print the error string.
-	err string
-
-	// callStack only when isDebug.
-	callStack *stack
-}
-
-func newError[T ~string](ctx context.Context, callersSkipCount int, format T, values ...any) Error[T] {
+// newError instance.
+func newError[T ~string](format T, values ...any) Error[T] {
 	var err string
 	if len(values) != 0 {
 		// Do not call fmt.Sprintf() if not necessary.
@@ -43,82 +25,44 @@ func newError[T ~string](ctx context.Context, callersSkipCount int, format T, va
 		err = string(format)
 	}
 
-	var callStack *stack
-	if shouldPrintStackTrace(ctx) {
-		callStack = callers(callersSkipCount)
-	}
-
-	return Error[T]{
-		err:       err,
-		callStack: callStack,
-	}
+	return Error[T](err)
 }
 
-// Error string, ignoring any call stack.
-func (self Error[T]) Error() string {
-	return self.err
-}
-
-func (self Error[T]) Format(state fmt.State, verb rune) {
-	if _, err := io.WriteString(state, self.err); err != nil {
-		fmt.Fprint(state, "<failed formatting error>")
-	}
-
-	if verb == 'v' && self.callStack != nil && state.Flag('+') {
-		fmt.Fprintf(state, "%+v", self.callStack)
-	}
-}
-
-// IsNone returns true if the Error is zero value.
-//
-// It is recommended to use Error along with Result and instead use Result.IsOk().
+// IsNone return true when this error instance represents the
+// absence of an error.
 func (self Error[T]) IsNone() bool {
-	return self.err == ""
+	return self == ""
 }
 
+// IsSome return true when this error instance represents the
+// presence of an error.
+//
+// Should be used when T is string or when checking if an
+// error exists. Should not be used when checking errors when
+// T is not string.
 func (self Error[T]) IsSome() bool {
-	return !self.IsNone()
+	return self != ""
 }
 
-// Into the sentinel type for the error.
+// Into the error type.
 //
-// This allows Error to be used in a switch in conjunction with linter "exhaustive".
-//
-// For example:
-//
-//  type myError errors.Sentinel
-//
-//  const (
-//    errOne   = myError("one")
-//    errTwo   = myError("two")
-//    errThree = myError("three")
-//  )
-//
-//  func multipleErrors(ctx context.Context, err int) errors.Error {
-//    switch err {
-//    case 1:
-//      return errors.New(ctx, errOne)
-//    case 2:
-//      return errors.New(ctx, errTwo)
-//    case 3:
-//      return errors.New(ctx, errThree)
-//    default:
-//      return errors.ErrNone
-//    }
-//  }
-//
-//  func TestSentinelEnum(t *testing.T) {
-//    t.Parallel()
-//
-//    err := multipleErrors(context.Background(), 1)
-//    //nolint:exhaustive // reason: expected lint error for testing
-//    switch err.Into() {
-//    case errOne:
-//      // Expected case.
-//    default:
-//      assert.Fail(t, "expected errOne")
-//    }
-//  }
+// Should be used when T is not a string in conjunction with switch.
 func (self Error[T]) Into() T {
-	return T(self.err)
+	return T(self)
+}
+
+// None error instance.
+//
+// Creates an Error that IsNone().
+func None[T ~string]() Error[T] {
+	return Error[T]("")
+}
+
+// Some error instance.
+//
+// Creates a new error instance that is of error type T.
+// Remember, the type T, not the error instance, is what
+// determines what kind of error this represents.
+func Some[T ~string](format T, values ...any) Error[T] {
+	return newError(format, values...)
 }

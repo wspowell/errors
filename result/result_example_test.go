@@ -1,7 +1,6 @@
 package result_test
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/wspowell/errors"
@@ -21,29 +20,27 @@ func Err[T any, E result.Optional](err E) Result[T, E] {
 }
 
 func ExampleResult() {
-	exampleFn := func(ctx context.Context, success bool) Result[int, Error] {
+	exampleFn := func(success bool) Result[int, errors.Error[string]] {
 		if success {
-			return Ok[int, Error](1)
+			return Ok[int, errors.Error[string]](1)
 		}
 
-		return Err[int](errors.New(ctx, errErrorFailure))
+		return Err[int](errors.Some(errErrorFailure))
 	}
 
-	ctx := context.Background()
-
 	// Success result.
-	fmt.Println(exampleFn(ctx, true).IsOk())
-	fmt.Println(exampleFn(ctx, true).Error().Error())
-	fmt.Println(exampleFn(ctx, true).Value())
-	fmt.Println(exampleFn(ctx, true).ValueOr(2))
-	fmt.Println(exampleFn(ctx, true).ValueOrPanic())
+	fmt.Println(exampleFn(true).IsOk())
+	fmt.Println(exampleFn(true).Error().Into())
+	fmt.Println(exampleFn(true).Value())
+	fmt.Println(exampleFn(true).ValueOr(2))
+	fmt.Println(exampleFn(true).ValueOrPanic())
 
 	// Error result.
-	fmt.Println(exampleFn(ctx, false).IsOk())
-	fmt.Println(exampleFn(ctx, false).Error().Error())
-	fmt.Println(exampleFn(ctx, false).Value())
-	fmt.Println(exampleFn(ctx, false).ValueOr(2))
-	//fmt.Println(exampleFn(ctx, false).ValueOrPanic()) // Will panic
+	fmt.Println(exampleFn(false).IsOk())
+	fmt.Println(exampleFn(false).Error().Into())
+	fmt.Println(exampleFn(false).Value())
+	fmt.Println(exampleFn(false).ValueOr(2))
+	//fmt.Println(exampleFn(false).ValueOrPanic()) // Will panic
 
 	// Output:
 	// true

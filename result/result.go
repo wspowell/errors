@@ -31,23 +31,9 @@ type Result[T any, E Optional] struct {
 	err   E
 }
 
-// Result decomposes into the basic (T, error) return value.
-//
-// Useful when decomposing into variables for custom evaluation.
-func (self Result[T, E]) Result() (T, E) {
-	return self.value, self.err
-}
-
 // IsOk then return true, false otherwise.
 func (self Result[T, E]) IsOk() bool {
 	return self.err.IsNone()
-}
-
-// Value of the Ok result.
-//
-// Note: If called on an error result, this will be the zero value of T.
-func (self Result[T, E]) Value() T {
-	return self.value
 }
 
 // Error of the result.
@@ -56,6 +42,13 @@ func (self Result[T, E]) Value() T {
 // Another alternative is to call Result.Error().IsNone().
 func (self Result[T, E]) Error() E {
 	return self.err
+}
+
+// Value of the Ok result.
+//
+// Note: If called on an error result, this will be the zero value of T.
+func (self Result[T, E]) Value() T {
+	return self.value
 }
 
 // ValueOr default value if not an Ok result.
@@ -77,4 +70,11 @@ func (self Result[T, E]) ValueOrPanic() T {
 	}
 
 	panic(fmt.Sprintf("%+v", self.err))
+}
+
+// Result decomposes into the basic (T, error) return value.
+//
+// Useful when decomposing into variables for custom evaluation.
+func (self Result[T, E]) Result() (T, E) {
+	return self.value, self.err
 }
