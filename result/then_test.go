@@ -13,10 +13,10 @@ func TestThenOk(t *testing.T) {
 	t.Parallel()
 
 	value := 1
-	res := result.Ok[int, errors.Error[string]](value)
+	res := result.Ok[int, errors.Standard](value)
 
-	res2 := result.Then(res, func(v int) result.Result[int, errors.Error[string]] {
-		return result.Ok[int, errors.Error[string]](v + 1)
+	res2 := result.Then(res, func(v int) result.Result[int, errors.Standard] {
+		return result.Ok[int, errors.Standard](v + 1)
 	})
 
 	assert.True(t, res2.IsOk())
@@ -26,10 +26,10 @@ func TestThenOk(t *testing.T) {
 func TestThenErr(t *testing.T) {
 	t.Parallel()
 
-	res := result.Err[int](errors.Some(errErrorFailure))
+	res := result.Err[int](errors.New(errErrorFailure))
 
-	res2 := result.Then(res, func(v int) result.Result[int, errors.Error[string]] {
-		return result.Ok[int, errors.Error[string]](v + 1)
+	res2 := result.Then(res, func(v int) result.Result[int, errors.Standard] {
+		return result.Ok[int, errors.Standard](v + 1)
 	})
 
 	assert.False(t, res2.IsOk())
@@ -40,10 +40,10 @@ func TestWhenThenOk(t *testing.T) {
 	t.Parallel()
 
 	value := 1
-	res := result.Ok[int, errors.Error[string]](value)
+	res := result.Ok[int, errors.Standard](value)
 
-	res2 := result.When[int, float64, errors.Error[string]](res).Then(func(v int) result.Result[float64, errors.Error[string]] {
-		return result.Ok[float64, errors.Error[string]](float64(v + 1.0))
+	res2 := result.When[int, float64, errors.Standard](res).Then(func(v int) result.Result[float64, errors.Standard] {
+		return result.Ok[float64, errors.Standard](float64(v + 1.0))
 	})
 
 	assert.True(t, res2.IsOk())
@@ -53,10 +53,10 @@ func TestWhenThenOk(t *testing.T) {
 func TestWhenThenErr(t *testing.T) {
 	t.Parallel()
 
-	res := result.Err[int](errors.Some(errErrorFailure))
+	res := result.Err[int](errors.New(errErrorFailure))
 
-	res2 := result.When[int, float64, errors.Error[string]](res).Then(func(v int) result.Result[float64, errors.Error[string]] {
-		return result.Ok[float64, errors.Error[string]](float64(v + 1.0))
+	res2 := result.When[int, float64, errors.Standard](res).Then(func(v int) result.Result[float64, errors.Standard] {
+		return result.Ok[float64, errors.Standard](float64(v + 1.0))
 	})
 
 	assert.False(t, res2.IsOk())

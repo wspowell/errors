@@ -15,7 +15,7 @@ func OkFunc() errors.Error[string] {
 }
 
 func ErrFunc() errors.Error[string] {
-	return errors.Some(ErrSome)
+	return errors.New(ErrSome)
 }
 
 func ExampleNone() {
@@ -32,7 +32,7 @@ func ExampleNone() {
 	// no error
 }
 
-func ExampleSome() {
+func ExampleNew() {
 	if err := ErrFunc(); err.IsSome() {
 		// Handle error.
 		fmt.Println(err)
@@ -58,7 +58,7 @@ func EnumOkFn() errors.Error[EnumErr] {
 }
 
 func EnumErrFn() errors.Error[EnumErr] {
-	return errors.Some(ErrEnumErr2)
+	return errors.New(ErrEnumErr2)
 }
 
 func ExampleEnumErrFn() {

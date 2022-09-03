@@ -7,25 +7,13 @@ import (
 	"github.com/wspowell/errors/result"
 )
 
-type Result[T any, E result.Optional] struct {
-	result.Result[T, E]
-}
-
-func Ok[T any, E result.Optional](value T) Result[T, E] {
-	return Result[T, E]{result.Ok[T, E](value)}
-}
-
-func Err[T any, E result.Optional](err E) Result[T, E] {
-	return Result[T, E]{result.Err[T](err)}
-}
-
 func ExampleResult() {
-	exampleFn := func(success bool) Result[int, errors.Error[string]] {
+	exampleFn := func(success bool) result.Result[int, errors.Standard] {
 		if success {
-			return Ok[int, errors.Error[string]](1)
+			return result.Ok[int, errors.Standard](1)
 		}
 
-		return Err[int](errors.Some(errErrorFailure))
+		return result.Err[int](errors.New(errErrorFailure))
 	}
 
 	// Success result.

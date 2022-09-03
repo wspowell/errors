@@ -20,12 +20,9 @@ func Err[T any, E Optional](err E) Result[T, E] {
 	}
 }
 
-// result_ of an operation.
+// Result of an operation.
 //
-// Designed to replace the return pattern of (value, error). result_ is either a value or an error.
-// Ideally, the internal err would be a non-interface type, but kept as error for backwards compatibility.
-// The internal err is designed to be a singular error and not a linked list of errors. This removes a
-// ton of complexity and uncertainty in the error chain and error usage/lifecycle.
+// Designed to replace the return pattern of (value, error). Result is either a value or an error.
 type Result[T any, E Optional] struct {
 	value T
 	err   E

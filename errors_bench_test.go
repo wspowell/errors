@@ -21,7 +21,7 @@ const errSentinel = "test"
 const errSentinelFmt = "%s"
 
 func errorFn() errors.Error[string] {
-	return errors.Some(errSentinel)
+	return errors.New(errSentinel)
 }
 func goerrorFn() error {
 	//nolint:goerr113 // reason: do not wrap error created for benchmark
@@ -31,7 +31,7 @@ func goerrorFn() error {
 func BenchmarkErr(b *testing.B) {
 	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
-		err = errors.Some(errSentinel)
+		err = errors.New(errSentinel)
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
@@ -75,7 +75,7 @@ func BenchmarkGoerrorsFunc(b *testing.B) {
 func BenchmarkErrFormat(b *testing.B) {
 	var err errors.Error[string]
 	for i := 0; i < b.N; i++ {
-		err = errors.Some(errSentinelFmt, "test")
+		err = errors.New(errSentinelFmt, "test")
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
@@ -96,7 +96,7 @@ func BenchmarkGoerrorsFormat(b *testing.B) {
 }
 
 func BenchmarkErrorInto(b *testing.B) {
-	err := errors.Some("test")
+	err := errors.New("test")
 	var output string
 	for i := 0; i < b.N; i++ {
 		output = err.Into()

@@ -13,10 +13,10 @@ func TestIsNone(t *testing.T) {
 
 	assert.True(t, errors.None[string]().IsNone())
 	assert.True(t, errors.None[EnumErr]().IsNone())
-	assert.True(t, errors.Some("").IsNone())
-	assert.False(t, errors.Some(ErrSome).IsNone())
-	assert.False(t, errors.Some(ErrEnumErr1).IsNone())
-	assert.False(t, errors.Some("whoops").IsNone())
+	assert.True(t, errors.New("").IsNone())
+	assert.False(t, errors.New(ErrSome).IsNone())
+	assert.False(t, errors.New(ErrEnumErr1).IsNone())
+	assert.False(t, errors.New("whoops").IsNone())
 }
 
 func TestIsSome(t *testing.T) {
@@ -24,10 +24,10 @@ func TestIsSome(t *testing.T) {
 
 	assert.False(t, errors.None[string]().IsSome())
 	assert.False(t, errors.None[EnumErr]().IsSome())
-	assert.False(t, errors.Some("").IsSome())
-	assert.True(t, errors.Some(ErrSome).IsSome())
-	assert.True(t, errors.Some(ErrEnumErr1).IsSome())
-	assert.True(t, errors.Some("whoops").IsSome())
+	assert.False(t, errors.New("").IsSome())
+	assert.True(t, errors.New(ErrSome).IsSome())
+	assert.True(t, errors.New(ErrEnumErr1).IsSome())
+	assert.True(t, errors.New("whoops").IsSome())
 }
 
 func TestErr(t *testing.T) {
@@ -43,5 +43,5 @@ func TestErr(t *testing.T) {
 func TestErrFormat(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "error: WHOOPS", errors.Some("error: %s", "WHOOPS").Into())
+	assert.Equal(t, "error: WHOOPS", errors.New("error: %s", "WHOOPS").Into())
 }

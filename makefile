@@ -1,8 +1,5 @@
 CURRENT_DIR = $(shell pwd)
 
-prereq:
-	go install gotest.tools/gotestsum@latest
-
 build:
 	golangci-lint run
 
