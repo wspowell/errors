@@ -1,6 +1,6 @@
 package result
 
-func Then[T any, S any, E Optional](self Result[T, E], f func(T) Result[S, E]) Result[S, E] {
+func Then[T any, S any, E comparable](self Result[T, E], f func(T) Result[S, E]) Result[S, E] {
 	if self.IsOk() {
 		return f(self.value)
 	}
@@ -8,7 +8,7 @@ func Then[T any, S any, E Optional](self Result[T, E], f func(T) Result[S, E]) R
 	return Err[S](self.err)
 }
 
-type When[T any, S any, E Optional] Result[T, E]
+type When[T any, S any, E comparable] Result[T, E]
 
 func (self When[T, S, E]) Then(fn func(T) Result[S, E]) Result[S, E] {
 	if Result[T, E](self).IsOk() {

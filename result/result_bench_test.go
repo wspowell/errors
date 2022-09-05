@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/wspowell/errors"
 	"github.com/wspowell/errors/result"
 )
 
@@ -15,19 +14,19 @@ import (
 var (
 	resGLOBAL   int
 	errGLOBAL   error
-	errorGLOBAL errors.Standard
+	errorGLOBAL FailureError
 )
 
-func resultOkInt() result.Result[int, errors.Standard] {
-	return result.Ok[int, errors.Standard](1)
+func resultOkInt() result.Result[int, FailureError] {
+	return result.Ok[int, FailureError](1)
 }
 
 func errorOkInt() (int, error) {
 	return 1, nil
 }
 
-func resultErrInt() result.Result[int, errors.Standard] {
-	return result.Err[int](errors.New(errErrorFailure))
+func resultErrInt() result.Result[int, FailureError] {
+	return result.Err[int](errFailureError)
 }
 
 func errorErrInt() (int, error) {
@@ -36,7 +35,7 @@ func errorErrInt() (int, error) {
 }
 
 func BenchmarkResultOk(b *testing.B) {
-	var res result.Result[int, errors.Standard]
+	var res result.Result[int, FailureError]
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -50,7 +49,7 @@ func BenchmarkResultOk(b *testing.B) {
 }
 
 func BenchmarkResultErr(b *testing.B) {
-	var res result.Result[int, errors.Standard]
+	var res result.Result[int, FailureError]
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -65,7 +64,7 @@ func BenchmarkResultErr(b *testing.B) {
 
 func BenchmarkResultOkResult(b *testing.B) {
 	var res int
-	var err errors.Standard
+	var err FailureError
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -97,7 +96,7 @@ func BenchmarkGoerrorOk(b *testing.B) {
 
 func BenchmarkResultErrResult(b *testing.B) {
 	var res int
-	var err errors.Standard
+	var err FailureError
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -168,21 +167,21 @@ func BenchmarkGoerrorErrThreeCallsDeep(b *testing.B) {
 	errGLOBAL = err
 }
 
-func resultErr1() result.Result[int, errors.Standard] {
-	return result.Err[int](errors.New(errErrorFailure))
+func resultErr1() result.Result[int, FailureError] {
+	return result.Err[int](errFailureError)
 }
 
-func resultErr2() result.Result[int, errors.Standard] {
+func resultErr2() result.Result[int, FailureError] {
 	return resultErr1()
 }
 
-func resultErr3() result.Result[int, errors.Standard] {
+func resultErr3() result.Result[int, FailureError] {
 	return resultErr2()
 }
 
 func BenchmarkResultErrThreeCallsDeep(b *testing.B) {
 	var res int
-	var err errors.Standard
+	var err FailureError
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {
@@ -236,21 +235,21 @@ func BenchmarkGoerrorOkThreeCallsDeep(b *testing.B) {
 	errGLOBAL = err
 }
 
-func resultOk1() result.Result[int, errors.Standard] {
-	return result.Ok[int, errors.Standard](10)
+func resultOk1() result.Result[int, FailureError] {
+	return result.Ok[int, FailureError](10)
 }
 
-func resultOk2() result.Result[int, errors.Standard] {
+func resultOk2() result.Result[int, FailureError] {
 	return resultOk1()
 }
 
-func resultOk3() result.Result[int, errors.Standard] {
+func resultOk3() result.Result[int, FailureError] {
 	return resultOk2()
 }
 
 func BenchmarkResultOkThreeCallsDeep(b *testing.B) {
 	var res int
-	var err errors.Standard
+	var err FailureError
 
 	for i := 0; i < b.N; i++ {
 		for k := 0; k < 10000; k++ {

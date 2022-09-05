@@ -2,19 +2,15 @@ package result
 
 import "fmt"
 
-type Optional interface {
-	IsNone() bool
-}
-
 // Ok result. Used upon success.
-func Ok[T any, E Optional](result T) Result[T, E] {
+func Ok[T any, E comparable](result T) Result[T, E] {
 	return Result[T, E]{
 		value: result,
 	}
 }
 
 // Err result. Used upon failure.
-func Err[T any, E Optional](err E) Result[T, E] {
+func Err[T any, E comparable](err E) Result[T, E] {
 	return Result[T, E]{
 		err: err,
 	}
@@ -23,14 +19,16 @@ func Err[T any, E Optional](err E) Result[T, E] {
 // Result of an operation.
 //
 // Designed to replace the return pattern of (value, error). Result is either a value or an error.
-type Result[T any, E Optional] struct {
+type Result[T any, E comparable] struct {
 	value T
 	err   E
 }
 
 // IsOk then return true, false otherwise.
 func (self Result[T, E]) IsOk() bool {
-	return self.err.IsNone()
+	var zero E
+
+	return self.err == zero
 }
 
 // Error of the result.

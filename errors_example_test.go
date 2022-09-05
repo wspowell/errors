@@ -6,97 +6,159 @@ import (
 	"github.com/wspowell/errors"
 )
 
+type ExampleErr uint64
+
 const (
-	ErrSome = "WHOOPS"
+	ErrNone ExampleErr = iota
+	ErrFailed
 )
 
-func OkFunc() errors.Error[string] {
-	return errors.None[string]()
+func OkFunc() ExampleErr {
+	return ErrNone
 }
 
-func ErrFunc() errors.Error[string] {
-	return errors.New(ErrSome)
+func ErrFunc() ExampleErr {
+	return ErrFailed
 }
 
-func ExampleNone() {
-	if err := OkFunc(); err.IsSome() {
+func ExampleOkFunc() {
+	switch err := OkFunc(); err {
+	case ErrFailed:
 		// Handle error.
 		fmt.Println(err)
-
-		return
+	case ErrNone:
+		fmt.Println("no error")
 	}
-
-	fmt.Println("no error")
 
 	// Output:
 	// no error
 }
 
-func ExampleNew() {
-	if err := ErrFunc(); err.IsSome() {
+func ExampleErrFunc() {
+	switch err := ErrFunc(); err {
+	case ErrFailed:
 		// Handle error.
 		fmt.Println(err)
-
-		return
+	case ErrNone:
+		fmt.Println("no error")
 	}
 
-	fmt.Println("no error")
-
 	// Output:
-	// WHOOPS
+	// 1
 }
 
-type EnumErr string
+type DetailedErr uint64
 
 const (
-	ErrEnumErr1 = EnumErr("enum error 1")
-	ErrEnumErr2 = EnumErr("enum error 2")
+	ErrDetailedNone DetailedErr = iota
+	ErrDetailedWhoops
 )
 
-func EnumOkFn() errors.Error[EnumErr] {
-	return errors.None[EnumErr]()
+func ErrDetailedErrFn() errors.Message[DetailedErr] {
+	return errors.NewMessage(ErrDetailedWhoops, "WHOOPS: %s", "specific details")
 }
 
-func EnumErrFn() errors.Error[EnumErr] {
-	return errors.New(ErrEnumErr2)
+func ErrDetailedOkFn() errors.Message[DetailedErr] {
+	return errors.Ok[DetailedErr]()
 }
 
-func ExampleEnumErrFn() {
-	switch err := EnumErrFn(); err.Into() {
+func ExampleErrDetailedErrFn() {
+	switch err := ErrDetailedErrFn(); err.Error {
+	case ErrDetailedWhoops:
+		// Handle error.
+		fmt.Println(err)
+	case ErrDetailedNone:
+		fmt.Println(err)
+	}
+
+	// Output:
+	// errors_test.DetailedErr(1, WHOOPS: specific details)
+}
+
+func ExampleErrDetailedOkFn() {
+	switch err := ErrDetailedOkFn(); err.Error {
+	case ErrDetailedWhoops:
+		// Handle error.
+		fmt.Println(err)
+	case ErrDetailedNone:
+		fmt.Println(err)
+	}
+
+	// Output:
+	// errors_test.DetailedErr(Ok)
+}
+
+type EnumErr uint64
+
+const (
+	ErrEnumNone EnumErr = iota
+	ErrEnumErr1
+	ErrEnumErr2
+)
+
+func (self EnumErr) String() string {
+	return [...]string{
+		"no error",
+		"enum error 1",
+		"enum error 2",
+	}[self]
+}
+
+func EnumOkFn() EnumErr {
+	return ErrEnumNone
+}
+
+func EnumErrFn() EnumErr {
+	return ErrEnumErr2
+}
+
+func ExampleEnumErr() {
+	switch err := EnumErrFn(); err {
 	case ErrEnumErr1:
 		// Handle error.
 		fmt.Println(err)
-
-		return
 	case ErrEnumErr2:
 		// Handle error.
 		fmt.Println(err)
-
-		return
+	case ErrEnumNone:
+		// No error
+		fmt.Println("no error")
 	}
-
-	fmt.Println("no error")
 
 	// Output:
 	// enum error 2
 }
 
-func ExampleEnumOkFn() {
-	switch err := EnumOkFn(); err.Into() {
-	case ErrEnumErr1:
-		// Handle error.
-		fmt.Println(err)
+type HandledError uint64
 
-		return
-	case ErrEnumErr2:
-		// Handle error.
-		fmt.Println(err)
+const (
+	ErrHandledErrorOk HandledError = iota
+	ErrHandledErrorNew
+	ErrHandledErrorExternal
+)
 
-		return
+func HandleExternalErrors() errors.Message[HandledError] {
+	switch err := ErrDetailedErrFn(); err.Error {
+	case ErrDetailedWhoops:
+		// Handle error.
+		return errors.NewMessage(ErrHandledErrorExternal, err.Message)
+	case ErrDetailedNone:
+		// No error
 	}
 
-	fmt.Println("no error")
+	return errors.Ok[HandledError]()
+}
+
+func ExampleHandleExternalErrors() {
+	switch err := HandleExternalErrors(); err.Error {
+	case ErrHandledErrorNew:
+		fmt.Println(err)
+	case ErrHandledErrorExternal:
+		fmt.Println(err)
+	case ErrHandledErrorOk:
+		fmt.Println("ok")
+	}
 
 	// Output:
-	// no error
+	// errors_test.HandledError(2, WHOOPS: specific details)
 }

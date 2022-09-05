@@ -1,7 +1,6 @@
 package errors_test
 
 import (
-
 	//nolint:depguard // reason: importing "errors" for bench comparison
 	goerrors "errors"
 	"fmt"
@@ -13,31 +12,62 @@ import (
 //nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
 var (
 	errGLOBAL    error
-	errorGLOBAL  errors.Error[string]
+	errorGLOBAL  uint64
 	outputGLOBAL string
 )
 
 const errSentinel = "test"
 const errSentinelFmt = "%s"
 
-func errorFn() errors.Error[string] {
-	return errors.New(errSentinel)
-}
 func goerrorFn() error {
 	//nolint:goerr113 // reason: do not wrap error created for benchmark
 	return goerrors.New(errSentinel)
 }
 
-func BenchmarkErr(b *testing.B) {
-	var err errors.Error[string]
+func BenchmarkEnumErr(b *testing.B) {
+	var err EnumErr
 	for i := 0; i < b.N; i++ {
-		err = errors.New(errSentinel)
+		err = ErrEnumErr1
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = err
+	errorGLOBAL = uint64(err)
 }
+
+func BenchmarkErrorsMessageErr(b *testing.B) {
+	var err errors.Message[DetailedErr]
+	for i := 0; i < b.N; i++ {
+		err = errors.NewMessage(ErrDetailedWhoops, "whoops")
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err.Error)
+}
+
+func BenchmarkEnumOk(b *testing.B) {
+	var err EnumErr
+	for i := 0; i < b.N; i++ {
+		err = ErrEnumNone
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err)
+}
+
+func BenchmarkErrorsMessageOk(b *testing.B) {
+	var err errors.Message[DetailedErr]
+	for i := 0; i < b.N; i++ {
+		err = errors.Ok[DetailedErr]()
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err.Error)
+}
+
 func BenchmarkGoerrorsNew(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
@@ -50,15 +80,48 @@ func BenchmarkGoerrorsNew(b *testing.B) {
 	errGLOBAL = err
 }
 
-func BenchmarkErrFunc(b *testing.B) {
-	var err errors.Error[string]
+func BenchmarkEnumErrFunc(b *testing.B) {
+	var err EnumErr
 	for i := 0; i < b.N; i++ {
-		err = errorFn()
+		err = EnumErrFn()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = err
+	errorGLOBAL = uint64(err)
+}
+
+func BenchmarkErrorsMessageErrFunc(b *testing.B) {
+	var err errors.Message[DetailedErr]
+	for i := 0; i < b.N; i++ {
+		err = ErrDetailedErrFn()
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err.Error)
+}
+
+func BenchmarkEnumOkFunc(b *testing.B) {
+	var err EnumErr
+	for i := 0; i < b.N; i++ {
+		err = EnumOkFn()
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err)
+}
+
+func BenchmarkErrorsMessageOkFunc(b *testing.B) {
+	var err errors.Message[DetailedErr]
+	for i := 0; i < b.N; i++ {
+		err = ErrDetailedOkFn()
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	errorGLOBAL = uint64(err.Error)
 }
 
 func BenchmarkGoerrorsFunc(b *testing.B) {
@@ -72,15 +135,15 @@ func BenchmarkGoerrorsFunc(b *testing.B) {
 	errGLOBAL = err
 }
 
-func BenchmarkErrFormat(b *testing.B) {
-	var err errors.Error[string]
+func BenchmarkErrorsMessageErrFormat(b *testing.B) {
+	var err errors.Message[DetailedErr]
 	for i := 0; i < b.N; i++ {
-		err = errors.New(errSentinelFmt, "test")
+		err = errors.NewMessage(ErrDetailedWhoops, errSentinelFmt, "test")
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = err
+	errorGLOBAL = uint64(err.Error)
 }
 
 func BenchmarkGoerrorsFormat(b *testing.B) {
@@ -95,11 +158,11 @@ func BenchmarkGoerrorsFormat(b *testing.B) {
 	errGLOBAL = err
 }
 
-func BenchmarkErrorInto(b *testing.B) {
-	err := errors.New("test")
+func BenchmarkErrorsString(b *testing.B) {
+	err := errors.NewMessage(ErrDetailedWhoops, "whoops")
 	var output string
 	for i := 0; i < b.N; i++ {
-		output = err.Into()
+		output = err.String()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
