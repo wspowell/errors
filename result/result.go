@@ -1,16 +1,24 @@
 package result
 
-import "fmt"
+import (
+	"fmt"
+	"runtime/debug"
+)
+
+type Error interface {
+	error
+	comparable
+}
 
 // Ok result. Used upon success.
-func Ok[T any, E comparable](result T) Result[T, E] {
+func Ok[T any, E Error](result T) Result[T, E] {
 	return Result[T, E]{
 		value: result,
 	}
 }
 
 // Err result. Used upon failure.
-func Err[T any, E comparable](err E) Result[T, E] {
+func Err[T any, E Error](err E) Result[T, E] {
 	return Result[T, E]{
 		err: err,
 	}
@@ -18,17 +26,20 @@ func Err[T any, E comparable](err E) Result[T, E] {
 
 // Result of an operation.
 //
-// Designed to replace the return pattern of (value, error). Result is either a value or an error.
-type Result[T any, E comparable] struct {
+// Designed to replace the return pattern of (value, error). result_ is either a value or an error.
+// Ideally, the internal err would be a non-interface type, but kept as error for backwards compatibility.
+// The internal err is designed to be a singular error and not a linked list of errors. This removes a
+// ton of complexity and uncertainty in the error chain and error usage/lifecycle.
+type Result[T any, E Error] struct {
 	value T
 	err   E
 }
 
 // IsOk then return true, false otherwise.
 func (self Result[T, E]) IsOk() bool {
-	var zero E
+	var ok E
 
-	return self.err == zero
+	return self.err == ok
 }
 
 // Error of the result.
@@ -64,7 +75,7 @@ func (self Result[T, E]) ValueOrPanic() T {
 		return self.value
 	}
 
-	panic(fmt.Sprintf("%+v", self.err))
+	panic(fmt.Sprintf("result panic: %s\nstack trace:\n%s\n", self.err, string(debug.Stack())))
 }
 
 // Result decomposes into the basic (T, error) return value.

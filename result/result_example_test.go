@@ -1,42 +1,58 @@
 package result_test
 
-import (
-	"fmt"
+// import (
+// 	"context"
+// 	"fmt"
 
-	"github.com/wspowell/errors/result"
-)
+// 	"github.com/wspowell/errors"
+// 	"github.com/wspowell/errors/result"
+// )
 
-func ExampleResult() {
-	exampleFn := func(success bool) result.Result[int, FailureError] {
-		if success {
-			return result.Ok[int, FailureError](1)
-		}
+// type Result[T any, E result.Optional] struct {
+// 	result.Result[T, E]
+// }
 
-		return result.Err[int](errFailureError)
-	}
+// func Ok[T any, E result.Optional](value T) Result[T, E] {
+// 	return Result[T, E]{result.Ok[T, E](value)}
+// }
 
-	// Success result.
-	fmt.Println(exampleFn(true).IsOk())
-	fmt.Println(exampleFn(true).Error())
-	fmt.Println(exampleFn(true).Value())
-	fmt.Println(exampleFn(true).ValueOr(2))
-	fmt.Println(exampleFn(true).ValueOrPanic())
+// func Err[T any, E result.Optional](err E) Result[T, E] {
+// 	return Result[T, E]{result.Err[T](err)}
+// }
 
-	// Error result.
-	fmt.Println(exampleFn(false).IsOk())
-	fmt.Println(exampleFn(false).Error())
-	fmt.Println(exampleFn(false).Value())
-	fmt.Println(exampleFn(false).ValueOr(2))
-	//fmt.Println(exampleFn(false).ValueOrPanic()) // Will panic
+// func ExampleResult() {
+// 	exampleFn := func(ctx context.Context, success bool) Result[int, Error] {
+// 		if success {
+// 			return Ok[int, Error](1)
+// 		}
 
-	// Output:
-	// true
-	// none
-	// 1
-	// 1
-	// 1
-	// false
-	// failure
-	// 0
-	// 2
-}
+// 		return Err[int](errors.New(ctx, errErrorFailure))
+// 	}
+
+// 	ctx := context.Background()
+
+// 	// Success result.
+// 	fmt.Println(exampleFn(ctx, true).IsOk())
+// 	fmt.Println(exampleFn(ctx, true).Error().Error())
+// 	fmt.Println(exampleFn(ctx, true).Value())
+// 	fmt.Println(exampleFn(ctx, true).ValueOr(2))
+// 	fmt.Println(exampleFn(ctx, true).ValueOrPanic())
+
+// 	// Error result.
+// 	fmt.Println(exampleFn(ctx, false).IsOk())
+// 	fmt.Println(exampleFn(ctx, false).Error().Error())
+// 	fmt.Println(exampleFn(ctx, false).Value())
+// 	fmt.Println(exampleFn(ctx, false).ValueOr(2))
+// 	//fmt.Println(exampleFn(ctx, false).ValueOrPanic()) // Will panic
+
+// 	// Output:
+// 	// true
+// 	//
+// 	// 1
+// 	// 1
+// 	// 1
+// 	// false
+// 	// failure
+// 	// 0
+// 	// 2
+// }

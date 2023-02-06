@@ -1,19 +1,21 @@
 package result
 
-func Then[T any, S any, E comparable](self Result[T, E], f func(T) Result[S, E]) Result[S, E] {
-	if self.IsOk() {
-		return f(self.value)
-	}
+// import "context"
 
-	return Err[S](self.err)
-}
+// func Then[T any, S any, E Optional](ctx context.Context, self Result[T, E], f func(context.Context, T) Result[S, E]) Result[S, E] {
+// 	if self.IsOk() {
+// 		return f(ctx, self.value)
+// 	}
 
-type When[T any, S any, E comparable] Result[T, E]
+// 	return Err[S](self.err)
+// }
 
-func (self When[T, S, E]) Then(fn func(T) Result[S, E]) Result[S, E] {
-	if Result[T, E](self).IsOk() {
-		return fn(self.value)
-	}
+// type When[T any, S any, E Optional] Result[T, E]
 
-	return Err[S](self.err)
-}
+// func (self When[T, S, E]) Then(ctx context.Context, fn func(context.Context, T) Result[S, E]) Result[S, E] {
+// 	if Result[T, E](self).IsOk() {
+// 		return fn(ctx, self.value)
+// 	}
+
+// 	return Err[S](self.err)
+// }

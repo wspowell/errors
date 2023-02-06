@@ -1,7 +1,6 @@
 package errors_test
 
 import (
-	//nolint:depguard // reason: importing "errors" for bench comparison
 	goerrors "errors"
 	"fmt"
 	"testing"
@@ -11,163 +10,79 @@ import (
 
 //nolint:gochecknoglobals // reason: storage to prevent benchmarks from optimizing away calls
 var (
-	errGLOBAL    error
-	errorGLOBAL  uint64
+	goErrGLOBAL  error
+	errorGLOBAL  errors.Error[TestError]
 	outputGLOBAL string
 )
 
-const errSentinel = "test"
-const errSentinelFmt = "%s"
-
-func goerrorFn() error {
-	//nolint:goerr113 // reason: do not wrap error created for benchmark
-	return goerrors.New(errSentinel)
+func errorFn() errors.Error[TestError] {
+	return errors.New(TestErrorInternalFailure)
 }
 
-func BenchmarkEnumErr(b *testing.B) {
-	var err EnumErr
+func goErrorFn() error {
+	return goerrors.New("InternalFailure")
+}
+
+func BenchmarkErrorsNew(b *testing.B) {
+	var err errors.Error[TestError]
 	for i := 0; i < b.N; i++ {
-		err = ErrEnumErr1
+		err = errors.New(TestErrorInternalFailure)
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = uint64(err)
+	errorGLOBAL = err
 }
 
-func BenchmarkErrorsMessageErr(b *testing.B) {
-	var err errors.Message[DetailedErr]
+func BenchmarkErrorsNewFn(b *testing.B) {
+	var err errors.Error[TestError]
 	for i := 0; i < b.N; i++ {
-		err = errors.NewMessage(ErrDetailedWhoops, "whoops")
+		err = errorFn()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = uint64(err.Error)
+	errorGLOBAL = err
 }
 
-func BenchmarkEnumOk(b *testing.B) {
-	var err EnumErr
+func BenchmarkErrorsOk(b *testing.B) {
+	var err errors.Error[TestError]
 	for i := 0; i < b.N; i++ {
-		err = ErrEnumNone
+		err = errors.Ok[TestError]()
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = uint64(err)
+	errorGLOBAL = err
 }
 
-func BenchmarkErrorsMessageOk(b *testing.B) {
-	var err errors.Message[DetailedErr]
+func BenchmarkErrorsHandle(b *testing.B) {
+	var errString string
+	err := errors.New(TestErrorInternalFailure)
 	for i := 0; i < b.N; i++ {
-		err = errors.Ok[DetailedErr]()
+		switch err.Cause {
+		case TestErrorMyBad:
+			errString = err.Error()
+		case TestErrorInternalFailure:
+			errString = err.Error()
+		}
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errorGLOBAL = uint64(err.Error)
+	outputGLOBAL = errString
 }
 
 func BenchmarkGoerrorsNew(b *testing.B) {
 	var err error
 	for i := 0; i < b.N; i++ {
 		//nolint:goerr113 // reason: error created for test
-		err = goerrors.New(errSentinel)
+		err = goerrors.New("test")
 	}
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errGLOBAL = err
-}
-
-func BenchmarkEnumErrFunc(b *testing.B) {
-	var err EnumErr
-	for i := 0; i < b.N; i++ {
-		err = EnumErrFn()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errorGLOBAL = uint64(err)
-}
-
-func BenchmarkErrorsMessageErrFunc(b *testing.B) {
-	var err errors.Message[DetailedErr]
-	for i := 0; i < b.N; i++ {
-		err = ErrDetailedErrFn()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errorGLOBAL = uint64(err.Error)
-}
-
-func BenchmarkEnumOkFunc(b *testing.B) {
-	var err EnumErr
-	for i := 0; i < b.N; i++ {
-		err = EnumOkFn()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errorGLOBAL = uint64(err)
-}
-
-func BenchmarkErrorsMessageOkFunc(b *testing.B) {
-	var err errors.Message[DetailedErr]
-	for i := 0; i < b.N; i++ {
-		err = ErrDetailedOkFn()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errorGLOBAL = uint64(err.Error)
-}
-
-func BenchmarkGoerrorsFunc(b *testing.B) {
-	var err error
-	for i := 0; i < b.N; i++ {
-		err = goerrorFn()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errGLOBAL = err
-}
-
-func BenchmarkErrorsMessageErrFormat(b *testing.B) {
-	var err errors.Message[DetailedErr]
-	for i := 0; i < b.N; i++ {
-		err = errors.NewMessage(ErrDetailedWhoops, errSentinelFmt, "test")
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errorGLOBAL = uint64(err.Error)
-}
-
-func BenchmarkGoerrorsFormat(b *testing.B) {
-	var err error
-	for i := 0; i < b.N; i++ {
-		//nolint:goerr113 // reason: error created for test
-		err = fmt.Errorf(errSentinelFmt, "test")
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	errGLOBAL = err
-}
-
-func BenchmarkErrorsString(b *testing.B) {
-	err := errors.NewMessage(ErrDetailedWhoops, "whoops")
-	var output string
-	for i := 0; i < b.N; i++ {
-		output = err.String()
-	}
-
-	// Ensure that the compiler is not optimizing away the call.
-	b.StopTimer()
-	outputGLOBAL = output
+	goErrGLOBAL = err
 }
 
 func BenchmarkGoerrorsWrap(b *testing.B) {
@@ -179,5 +94,79 @@ func BenchmarkGoerrorsWrap(b *testing.B) {
 
 	// Ensure that the compiler is not optimizing away the call.
 	b.StopTimer()
-	errGLOBAL = err
+	goErrGLOBAL = err
 }
+
+// *** DO NOT RUN. CONSUMES MASSIVE AMOUNTS OF MEMORY. ***
+// func BenchmarkGoerrorsWrapGo120(b *testing.B) {
+// 	//nolint:goerr113 // reason: error created for test
+// 	var err error
+// 	errOther := goerrors.New("test")
+// 	for i := 0; i < b.N; i++ {
+// 		err = fmt.Errorf("%w %w", err, errOther)
+// 	}
+
+// 	// Ensure that the compiler is not optimizing away the call.
+// 	b.StopTimer()
+// 	goErrGLOBAL = err
+// }
+
+func BenchmarkGoErrorsHandle(b *testing.B) {
+	var errString string
+	err := goerrors.New("test")
+	for i := 0; i < b.N; i++ {
+		if err != nil {
+			errString = err.Error()
+		}
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	outputGLOBAL = errString
+}
+
+func BenchmarkGoerrorsWrapIs(b *testing.B) {
+	//nolint:goerr113 // reason: error created for test
+	err := goerrors.New("test")
+	for i := 0; i < b.N; i++ {
+		err = fmt.Errorf("%w", err)
+	}
+
+	sentinelErr := goerrors.New("other")
+
+	b.ResetTimer()
+	var errString string
+	for i := 0; i < b.N; i++ {
+		if goerrors.Is(err, sentinelErr) {
+			errString = err.Error()
+		}
+	}
+
+	// Ensure that the compiler is not optimizing away the call.
+	b.StopTimer()
+	outputGLOBAL = errString
+}
+
+// *** DO NOT RUN. CONSUMES MASSIVE AMOUNTS OF MEMORY. ***
+// func BenchmarkGoerrorsWrapGo120Is(b *testing.B) {
+// 	//nolint:goerr113 // reason: error created for test
+// 	var err error
+// 	errOther := goerrors.New("test")
+// 	for i := 0; i < b.N; i++ {
+// 		err = fmt.Errorf("%w %w", err, errOther)
+// 	}
+
+// 	sentinelErr := goerrors.New("other")
+
+// 	b.ResetTimer()
+// 	var errString string
+// 	for i := 0; i < b.N; i++ {
+// 		if goerrors.Is(err, sentinelErr) {
+// 			errString = err.Error()
+// 		}
+// 	}
+
+// 	// Ensure that the compiler is not optimizing away the call.
+// 	b.StopTimer()
+// 	outputGLOBAL = errString
+// }

@@ -1,35 +1,70 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.163.1/containers/go
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-outside-of-docker-compose
 {
-	"name": "Go",
-	"dockerComposeFile": [
-        "./docker-compose.yml"
-    ],
-    // The 'service' property is the name of the service for the container that VS Code should
-    // use. Update this value and .devcontainer/docker-compose.yml to the real service name.
-    "service": "errors",
-    // The optional 'workspaceFolder' property is the path VS Code should open by default when
-    // connected. This is typically a file mount in .devcontainer/docker-compose.yml
-    "workspaceFolder": "/workspace/errors",
+	"name": "Docker from Docker Compose",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
-	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		"terminal.integrated.defaultProfile.linux": "sh",
-		"go.lintTool": "golangci-lint",
-		"go.formatTool": "gofmt",
-		"errorLens.exclude": [".*: Unknown word\\."],
-		"cSpell.checkOnlyEnabledFileTypes": true,
-		"cSpell.enableFiletypes": ["go"]
+	// Use this environment variable if you need to bind mount your local source code into a new container.
+	"remoteEnv": {
+		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
 	},
 
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"golang.go",
-		"eamodio.gitlens",
-		"wayou.vscode-todo-highlight",
-		"mutantdino.resourcemonitor",
-		"streetsidesoftware.code-spell-checker",
-		"usernamehw.errorlens",
-		"ms-vsliveshare.vsliveshare"
-	]
+	"features": {
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+			"version": "20.10",
+			"enableNonRootDocker": "true",
+			"moby": "true"
+		},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "latest"
+		},
+		"ghcr.io/guiyomh/features/golangci-lint:0": {
+			"version": "latest"
+		},
+		"ghcr.io/guiyomh/features/gomarkdoc:0": {
+			"version": "latest"
+		},
+		"ghcr.io/guiyomh/features/goreleaser:0": {
+			"version": "latest"
+		},
+		"ghcr.io/guiyomh/features/gotestsum:0": {
+			"version": "latest"
+		}
+	},
+
+	"customizations": {
+		"vscode": {
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+				"go.toolsManagement.checkForUpdates": "off",
+				"go.useLanguageServer": true,
+				"go.gopath": "/go",
+				"go.goroot": "/usr/local/go",
+				"go.lintTool": "golangci-lint",
+				"errorLens.exclude": [".*: Unknown word\\."],
+				"cSpell.checkOnlyEnabledFileTypes": true,
+				"cSpell.enableFiletypes": ["go"]
+			},
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"golang.Go",
+				"eamodio.gitlens",
+				"mutantdino.resourcemonitor",
+				"wayou.vscode-todo-highlight",
+				"streetsidesoftware.code-spell-checker",
+				"usernamehw.errorlens"
+			]
+		}
+	}
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "docker --version",
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
 }

@@ -559,9 +559,9 @@ linters-settings:
     list-type: blacklist
     include-go-root: true
     packages:
-      - errors
+      #- errors
       - log
     packages-with-error-message:
       # specify an error message to output when a blacklisted package is used
-      - errors: "replace with github.com/wspowell/errors"
+      #- errors: "replace with github.com/wspowell/errors"
       - log: "replace with github.com/wspowell/log"
