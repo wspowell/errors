@@ -19,27 +19,18 @@ import (
 // Enum types should follow a pattern of: type <Name>Error uint
 // Enum values should follow a pattern of: <Name>Error<FailureCase>
 // Enum values MUST start at 1 and can utilize: <Name>Error(iota + 1)
-//
-// Example:
-
 type Causer interface {
 	~uint
 }
 
-// Error is an instance of a sentinel error. If the error was created via New() then the error is
-// considered and inline error and is not comparable with another Error.
+// Error instance whose Cause is T.
 //
-// Error should not be used with "==". Instead, use Error.As().
+// An Error is only storage for context for the Cause that triggered the error.
 type Error[T Causer] struct {
 	Cause T
 }
 
-// New error instance.
-//
-// This should be called when the application creates a new error.
-// This new Error is not (intended to be) comparable with other Errors and therefore cannot be
-// used as a sentinel error. A Sentinel may be used and compared using Error.Sentinel().
-// A context is accepted in order to pass through API level feature flags.
+// New Error instance of a given Cause.
 func New[T Causer](cause T) Error[T] {
 	return Error[T]{
 		Cause: cause,
@@ -49,6 +40,9 @@ func New[T Causer](cause T) Error[T] {
 // Error string representation.
 //
 // Satisfies golang's Error() string interface.
+//
+// For best performance, implement Stringer for the Cause type.
+// Not implementing Stringer will require reflection via fmt.Sprintf().
 func (self Error[T]) Error() string {
 	if asStringer, ok := any(self.Cause).(fmt.Stringer); ok {
 		return asStringer.String()
@@ -61,23 +55,18 @@ func (self Error[T]) Error() string {
 	return fmt.Sprintf("%T(%d)", self.Cause, self.Cause)
 }
 
-// IsNone returns true if the Error is zero value.
+// IsOk returns true if this is an Ok Error instance.
 //
-// It is recommended to use Error along with Result and instead use Result.IsOk().
+// See: Ok()
 func (self Error[T]) IsOk() bool {
 	return self.Cause == 0
 }
 
+// IsErr returns true if this is a non-zero Error instance.
+//
+// See: New()
 func (self Error[T]) IsErr() bool {
 	return self.Cause != 0
-}
-
-func (self Error[T]) IsSome() bool {
-	return self.Cause != 0
-}
-
-func (self Error[T]) IsNone() bool {
-	return self.Cause == 0
 }
 
 // Ok or no error present.

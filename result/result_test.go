@@ -11,20 +11,6 @@ import (
 	"github.com/wspowell/errors/result"
 )
 
-type FailureError uint64
-
-const (
-	errFailureNone FailureError = iota
-	errFailureError
-)
-
-func (self FailureError) String() string {
-	return [...]string{
-		"none",
-		"failure",
-	}[self]
-}
-
 func TestOk(t *testing.T) {
 	t.Parallel()
 
